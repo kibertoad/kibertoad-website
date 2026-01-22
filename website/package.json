@@ -22,6 +22,7 @@
   "name": "kibertoad-website",
   "scripts": {
     "build": "hugo --gc --minify",
+    "build:stats": "hugo --gc",
     "dev": "hugo server",
     "preview": "hugo server -e production --minify"
   },

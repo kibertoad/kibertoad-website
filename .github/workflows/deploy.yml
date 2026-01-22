@@ -21,6 +21,8 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -33,6 +35,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: '1.23'
+          cache: false
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
@@ -47,11 +50,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: website/package-lock.json
 
-      - name: Debug working directory
-        run: |
-          pwd
-          ls -la
-          cat go.mod | head -5
+      - name: Cache Hugo modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.HUGO_CACHEDIR }}
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-hugo-${{ hashFiles('website/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-hugo-
 
       - name: Get Hugo modules
         run: hugo mod get -u
@@ -62,9 +69,11 @@ jobs:
       - name: Install npm dependencies
         run: npm install
 
+      - name: Generate hugo_stats.json
+        run: hugo --gc
+
       - name: Build site
         env:
-          HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           HUGO_ENVIRONMENT: production
           NODE_ENV: production
         run: hugo --gc --minify
