@@ -13,6 +13,7 @@ description: "My professional background and experience"
   - [Advanced Caching in Node.js](#advanced-caching-in-nodejs)
   - [Reinventing the wheel 101: Templates and Best-Practices-as-Code](#reinventing-the-wheel-101-templates-and-best-practices-as-code)
 - [Experience](#experience)
+- [Skills](#skills)
 
 ---
 
@@ -89,3 +90,26 @@ description: "My professional background and experience"
 ### Earlier Career
 
 Started in 2008 as a Test Automation Engineer, transitioned to Java development at Asseco Lithuania, where I grew from an engineer to Technical Lead over 5 years (2011 - 2016).
+
+## Skills
+
+### Languages
+
+| Language | Level |
+|----------|-------|
+| Node.js | Expert |
+| TypeScript | Expert |
+| Java | Expert |
+| Kotlin | Advanced |
+| Vue.js | Intermediate |
+| PHP, Ruby, Perl | Used in the past, somewhat rusty now |
+
+### Domains
+
+| Area | Level |
+|------|-------|
+| Architecture | Expert |
+| Performance engineering | Expert |
+| Asynchronous & event-driven design | Expert |
+| API design | Expert |
+| Databases | Advanced |
