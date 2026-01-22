@@ -47,20 +47,30 @@ jobs:
           cache: 'npm'
           cache-dependency-path: website/package-lock.json
 
+      - name: Debug working directory
+        run: |
+          pwd
+          ls -la
+          cat go.mod | head -5
+
+      - name: Initialize Hugo modules
+        run: hugo mod tidy
+
       - name: Download Hugo modules
-        run: hugo mod get
+        run: hugo mod download
 
       - name: Setup module dependencies
         run: hugo mod npm pack
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build site
         env:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           HUGO_ENVIRONMENT: production
-        run: hugo --minify
+          NODE_ENV: production
+        run: hugo --gc --minify --verbose
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
