@@ -56,7 +56,7 @@ description: "My professional background and experience"
 
 </div>
 
-[Watch on YouTube](https://www.youtube.com/watch?v=O0Nk3XhxxYg)
+[Watch on YouTube](https://www.youtube.com/watch?v=O0Nk3XhxxYg) (ignore first 90 seconds of me panicking about presenting to the most hardcore crowd in my life)
 
 ---
 
