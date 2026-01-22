@@ -1,0 +1,17 @@
+{{ define "main" }}
+  <section class="section-sm">
+    <div class="container">
+      <div class="row justify-center">
+        <div class="md:col-10 lg:col-8">
+          {{ if .Params.image }}
+            <div class="max-w-xs mx-auto mb-6">
+              {{ partial "image" (dict "Src" .Params.image "Context" .Page "Alt" .Title "Class" "rounded" ) }}
+            </div>
+          {{ end }}
+          <h2 class="h3 mb-6">{{ .Title }}</h2>
+          <div class="content">{{ .Content }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+{{ end }}

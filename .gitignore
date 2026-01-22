@@ -1,3 +1,13 @@
+# Hugo
+website/public/
+website/resources/
+website/.hugo_build.lock
+website/hugo_stats.json
+website/themes/
+
+# Claude Code local settings
+.claude/settings.local.json
+
 # Logs
 logs
 *.log
@@ -137,3 +147,4 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+.idea

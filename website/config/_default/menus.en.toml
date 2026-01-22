@@ -1,0 +1,49 @@
+############# English navigation ##############
+
+# main menu
+[[main]]
+name = "Blog"
+url = "/blog"
+weight = 1
+
+[[main]]
+name = "Open Source"
+url = "/open-source"
+weight = 2
+
+[[main]]
+name = "Poetry"
+url = "/poetry"
+weight = 3
+
+[[main]]
+name = "Games"
+url = "/games"
+weight = 4
+
+[[main]]
+name = "Professional"
+url = "/professional"
+weight = 5
+
+[[main]]
+name = "About me"
+url = "/about"
+weight = 6
+
+[[main]]
+name = "Contacts"
+url = "/contact"
+weight = 7
+
+
+# footer menu
+[[footer]]
+name = "About me"
+url = "/about"
+weight = 1
+
+[[footer]]
+name = "Contacts"
+url = "/contact"
+weight = 2

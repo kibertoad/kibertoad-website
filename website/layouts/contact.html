@@ -1,0 +1,37 @@
+{{ define "main" }}
+  {{ partial "page-header" . }}
+
+  <section class="section-sm">
+    <div class="container">
+      <div class="row">
+        <div class="md:col-10 lg:col-6 mx-auto">
+          <div class="space-y-6">
+            <!-- Email -->
+            <div class="flex items-center gap-4">
+              <i class="fa-solid fa-envelope text-2xl text-primary w-8"></i>
+              <a href="mailto:info@kibertoad.com" class="text-lg hover:text-primary">
+                info@kibertoad.com
+              </a>
+            </div>
+
+            <!-- Twitter/X -->
+            <div class="flex items-center gap-4">
+              <i class="fa-brands fa-x-twitter text-2xl text-primary w-8"></i>
+              <a href="https://twitter.com/kibertoad" target="_blank" rel="noopener" class="text-lg hover:text-primary">
+                @kibertoad
+              </a>
+            </div>
+
+            <!-- Bluesky -->
+            <div class="flex items-center gap-4">
+              <i class="fa-brands fa-bluesky text-2xl text-primary w-8"></i>
+              <a href="https://bsky.app/profile/kibertoad.bsky.social" target="_blank" rel="noopener" class="text-lg hover:text-primary">
+                @kibertoad
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{{ end }}
