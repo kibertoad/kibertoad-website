@@ -14,6 +14,7 @@ description: "My professional background and experience"
   - [Reinventing the wheel 101: Templates and Best-Practices-as-Code](#reinventing-the-wheel-101-templates-and-best-practices-as-code)
 - [Experience](#experience)
 - [Skills](#skills)
+- [Relevant Education](#relevant-education)
 
 ---
 
@@ -113,3 +114,8 @@ Started in 2008 as a Test Automation Engineer, transitioned to Java development 
 | Asynchronous & event-driven design | Expert |
 | API design | Expert |
 | Databases | Advanced |
+
+## Relevant Education
+
+**Master's Degree in Computer Software Engineering**
+Vilnius University
