@@ -3,10 +3,9 @@
 baseURL = "https://example.org/"
 # Title of your website (required).
 title = "kibertoad's forge"
-# Your theme name
-theme = "hugoplate"
+# Theme is loaded via Hugo modules (see config/_default/module.toml)
 # Default time zone for time stamps; use any valid tz database name: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List
-timeZone = "America/New_York"
+timeZone = "Europe/Vilnius"
 # post excerpt
 summaryLength = 10 # see https://gohugo.io/content-management/summaries/#automatic-summary
 # disable language
