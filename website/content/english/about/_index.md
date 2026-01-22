@@ -35,4 +35,10 @@ Mentored 9 engineers throughout my career: 2 senior engineers who grew into staf
 
 ### Writing
 
-Published a book of poetry "Aquarium in the Head" in 2020.
+Published a book of poetry "Aquarium in my Head" in 2020.
+
+<div style="max-width: 300px;">
+
+![Aquarium in the Head book cover](/images/akvarium_golovy.jpg)
+
+</div>
