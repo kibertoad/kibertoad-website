@@ -47,17 +47,20 @@ jobs:
           cache: 'npm'
           cache-dependency-path: website/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
-
       - name: Download Hugo modules
         run: hugo mod get
+
+      - name: Setup module dependencies
+        run: hugo mod npm pack
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build site
         env:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           HUGO_ENVIRONMENT: production
-        run: hugo --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
+        run: hugo --minify
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
