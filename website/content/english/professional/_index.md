@@ -21,14 +21,22 @@ description: "My professional background and experience"
 ### Building for the World: A Developer's Guide to Internationalization and Localization
 **4Developers 2025** · Warsaw, Poland · May 2025
 
-<img src="/images/talks/4developers-2025.jpg" alt="Talk photo" style="max-width: 400px;">
+<div style="max-width: 400px;">
+
+![Talk photo](/images/talks/4developers-2025.jpg)
+
+</div>
 
 ---
 
 ### Painless Testing of Event-Driven Architecture
 **DevDays Europe 2025** · Vilnius, Lithuania · May 2025
 
+<div style="max-width: 400px;">
+
 ![Talk photo](/images/talks/devdays.jpg)
+
+</div>
 
 ---
 
@@ -42,7 +50,11 @@ description: "My professional background and experience"
 ### Advanced Caching in Node.js
 **NodeConf EU** · Kilkenny, Ireland · November 2023
 
-<a href="https://www.youtube.com/watch?v=O0Nk3XhxxYg"><img src="/images/talks/nodeconf2023.jpg" alt="Talk photo" style="max-width: 400px;"></a>
+<div style="max-width: 400px;">
+
+[![Talk photo](/images/talks/nodeconf2023.jpg)](https://www.youtube.com/watch?v=O0Nk3XhxxYg)
+
+</div>
 
 [Watch on YouTube](https://www.youtube.com/watch?v=O0Nk3XhxxYg)
 
@@ -51,7 +63,11 @@ description: "My professional background and experience"
 ### Reinventing the wheel 101: Templates and Best-Practices-as-Code
 **DevEx** · Vilnius, Lithuania · January 2023
 
+<div style="max-width: 400px;">
+
 ![Talk photo](/images/talks/devex.jpg)
+
+</div>
 
 ## Experience
 
