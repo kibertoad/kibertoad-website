@@ -8,6 +8,7 @@ path = "github.com/zeon-studio/hugoplate"
 [[imports]]
 path = "github.com/gethugothemes/hugo-modules/search"
 
+# PWA disabled - empty overrides in layouts/partials/
 # [[imports]]
 # path = "github.com/gethugothemes/hugo-modules/pwa"
 
