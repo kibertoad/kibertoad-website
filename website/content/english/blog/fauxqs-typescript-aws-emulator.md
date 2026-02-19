@@ -95,7 +95,7 @@ const published = await server.spy.waitForMessage(
 expect(published).toBeDefined();
 ```
 
-The `waitForMessage` call checks the internal buffer first. If a matching event is already there (because the operation completed before the assertion ran), it resolves immediately. If not, it returns a Promise that resolves as soon as a matching event arrives. No polling, no arbitrary timeouts.
+The `waitForMessage` call checks the internal buffer first. If a matching event is already there (because the operation completed before the assertion ran), it resolves immediately. If not, it returns a Promise that resolves as soon as a matching event arrives. All `waitFor` calls accept an optional timeout in milliseconds, so your tests won't hang indefinitely if something goes wrong. No polling, no arbitrary sleeps.
 
 This works across the full message lifecycle. You can wait for a message to be consumed (deleted from the queue):
 
@@ -141,17 +141,6 @@ const sendResult = await sqsClient.send(new SendMessageCommand({ ... }));
 
 // Wait for this specific message to be consumed
 const consumed = await server.spy.waitForMessageWithId(sendResult.MessageId!, "consumed");
-```
-
-All `waitFor` calls accept an optional timeout (in milliseconds) so your tests don't hang indefinitely if something goes wrong:
-
-```typescript
-// Reject after 2 seconds if no match
-const msg = await server.spy.waitForMessage(
-  { service: "sqs", queueName: "orders" },
-  "published",
-  2000,
-);
 ```
 
 When you need to wait for multiple messages (e.g., a batch publish or fan-out), `waitForMessages` collects a specified number of matches before resolving:
