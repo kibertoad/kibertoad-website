@@ -62,7 +62,7 @@ Working on MQT alongside brilliant engineers like Carlos Gamero and Daria Carlot
 ## Key Differentiators
 
 - **Message spy system.** A built-in testing primitive for asserting on asynchronous event flows. See the dedicated section below.
-- **No Docker required.** fauxqs is a Fastify app that can run directly inside your test process. `npx fauxqs` starts it as a standalone server, but you can also start it programmatically with `startFauxqs()` and avoid spawning a separate process entirely. This simplifies CI setup considerably and eliminates an entire class of "works on my machine" issues related to Docker networking, volume mounts and resource limits. You can, of course, still run it in Docker as part of your docker-compose configuration if that fits your setup, but it's just as easy to run fauxqs as an in-memory library directly in your test process.
+- **No Docker required for tests.** fauxqs is a Fastify app that can run directly inside your test process. `npx fauxqs` starts it as a standalone server, but you can also start it programmatically with `startFauxqs()` and avoid spawning a separate process entirely. This simplifies CI setup considerably and eliminates an entire class of "works on my machine" issues related to Docker networking, volume mounts and resource limits. For local development, if you need S3 (see the virtual-hosted-style DNS section below), you'll likely prefer running fauxqs via Docker with the wildcard DNS solution baked in.
 - **Pure TypeScript.** No JVM, no Python, no native binaries. If you have Node.js, you can run it. This also means you can embed it directly in your test setup with `startFauxqs()` and get programmatic access to create queues, topics and buckets before tests run.
 - **Queue inspection.** You can non-destructively peek at all messages in a queue (ready, in-flight, and delayed) without consuming them or affecting visibility timeouts. Available both as a programmatic API (`server.inspectQueue("my-queue")`) and via HTTP endpoints (`GET /_fauxqs/queues/my-queue`). Useful for debugging test failures when you need to see what's actually sitting in a queue.
 - **Init config.** You can pass a JSON file to pre-create queues, topics, subscriptions, and buckets on startup. This is useful for both local development and CI environments.
@@ -178,9 +178,21 @@ You might wonder why an SQS/SNS emulator also includes S3. The reason is practic
 
 Getting S3 to work with local emulators outside of Docker networking has a well-known wrinkle. By default, the AWS SDK sends S3 requests using virtual-hosted-style URLs, where the bucket name is prepended to the hostname: `my-bucket.s3.localhost:4566`. This means DNS needs to resolve `*.localhost` subdomains to `127.0.0.1`, which doesn't happen automatically on all platforms.
 
-Inside Docker, this is a non-issue because container networking handles it. Outside Docker, you need to deal with it explicitly. fauxqs provides three options:
+Inside Docker, this is a non-issue because container networking handles it. Outside Docker, you need to deal with it explicitly. If you need S3 for local development (not just tests), you'll likely benefit from running the official [fauxqs Docker image](https://github.com/kibertoad/fauxqs) with the wildcard DNS solution baked in, rather than using the embedded library version.
 
-**Option 1: `interceptLocalhostDns()` (recommended).** This patches Node.js `dns.lookup` so that any hostname ending in `.localhost` resolves to `127.0.0.1`. You call it once in your test setup, and every S3Client in the process works without any per-client configuration. Since it only affects `.localhost` subdomains, it's unlikely to interfere with anything else in your tests:
+fauxqs provides four options:
+
+**Option 1: `fauxqs.dev` wildcard DNS (recommended for Docker setups).** A public DNS entry resolves `*.localhost.fauxqs.dev` to `127.0.0.1`, so virtual-hosted-style S3 requests work without `/etc/hosts` changes, custom request handlers, or `forcePathStyle`. This replicates the creative approach [pioneered by LocalStack](https://docs.localstack.cloud/references/network-troubleshooting/endpoint-url/#wildcard-dns-access) with their `localhost.localstack.cloud` domain. Just point your S3 client at it:
+
+```typescript
+const s3 = new S3Client({
+  endpoint: "http://s3.localhost.fauxqs.dev:4566",
+  region: "us-east-1",
+  credentials: { accessKeyId: "test", secretAccessKey: "test" },
+});
+```
+
+**Option 2: `interceptLocalhostDns()` (recommended for embedded library usage).** This patches Node.js `dns.lookup` so that any hostname ending in `.localhost` resolves to `127.0.0.1`. You call it once in your test setup, and every S3Client in the process works without any per-client configuration. Since it only affects `.localhost` subdomains, it's unlikely to interfere with anything else in your tests:
 
 ```typescript
 import { interceptLocalhostDns } from "fauxqs";
@@ -190,7 +202,7 @@ const restore = interceptLocalhostDns();
 restore();
 ```
 
-**Option 2: `createLocalhostHandler()`.** This creates a custom HTTP request handler that resolves all hostnames to `127.0.0.1`. It's scoped to a single S3Client instance, so there are no global side effects. The downside is that you need to pass it to each client individually, which means either conditionally setting `requestHandler` based on test/production context or swapping the S3Client via your DI mechanism:
+**Option 3: `createLocalhostHandler()`.** This creates a custom HTTP request handler that resolves all hostnames to `127.0.0.1`. It's scoped to a single S3Client instance, so there are no global side effects. The downside is that you need to pass it to each client individually, which means either conditionally setting `requestHandler` based on test/production context or swapping the S3Client via your DI mechanism:
 
 ```typescript
 import { S3Client } from "@aws-sdk/client-s3";
@@ -204,7 +216,7 @@ const s3 = new S3Client({
 });
 ```
 
-**Option 3: `forcePathStyle`.** This tells the SDK to use path-style URLs (`http://localhost:4566/my-bucket/key`) instead of virtual-hosted-style, sidestepping the DNS issue entirely. Same caveat as Option 2: you need to conditionally set `forcePathStyle` or replace the client in tests:
+**Option 4: `forcePathStyle`.** This tells the SDK to use path-style URLs (`http://localhost:4566/my-bucket/key`) instead of virtual-hosted-style, sidestepping the DNS issue entirely. Same caveat as Option 3: you need to conditionally set `forcePathStyle` or replace the client in tests:
 
 ```typescript
 const s3 = new S3Client({
