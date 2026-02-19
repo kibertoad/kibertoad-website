@@ -3,6 +3,7 @@ module kibertoad-website
 go 1.21
 
 require (
+	github.com/gethugothemes/hugo-modules v0.0.0-20260106053822-13607459af90 // indirect
 	github.com/gethugothemes/hugo-modules/accordion v0.0.0-20260106053822-13607459af90 // indirect
 	github.com/gethugothemes/hugo-modules/adsense v0.0.0-20260106053822-13607459af90 // indirect
 	github.com/gethugothemes/hugo-modules/components/announcement v0.0.0-20260106053822-13607459af90 // indirect
@@ -27,5 +28,5 @@ require (
 	github.com/gethugothemes/hugo-modules/tab v0.0.0-20260106053822-13607459af90 // indirect
 	github.com/gethugothemes/hugo-modules/table-of-contents v0.0.0-20260106053822-13607459af90 // indirect
 	github.com/gethugothemes/hugo-modules/videos v0.0.0-20260106053822-13607459af90 // indirect
-	github.com/zeon-studio/hugoplate v0.0.0-20260120074103-24b7759c1e6d // indirect
+	github.com/zeon-studio/hugoplate v0.0.0-20260209155632-62ee70b98f39 // indirect
 )

@@ -1,3 +1,5 @@
+github.com/gethugothemes/hugo-modules v0.0.0-20260106053822-13607459af90 h1:bMJJlr9+08Dtk52CJDvUotpW74Ixg8x9GfQaAwYAnvU=
+github.com/gethugothemes/hugo-modules v0.0.0-20260106053822-13607459af90/go.mod h1:u7jiqHghLDpRSD9jdKJLdJpAH39k99S6tkKfqoK5Mqc=
 github.com/gethugothemes/hugo-modules/accordion v0.0.0-20251201044043-2bed50ee369b h1:F3H9nMr3vZiEjDeusF2zmN9rWHEI9k/ZQbz7R8JAZwg=
 github.com/gethugothemes/hugo-modules/accordion v0.0.0-20251201044043-2bed50ee369b/go.mod h1:D4DpauKPDcUHI9CVKYmJeO6bkSJIhUN864TyXZ2o0VI=
 github.com/gethugothemes/hugo-modules/accordion v0.0.0-20260106053822-13607459af90 h1:W5hk68KQAHYi1lrNgco/GKIMM0Z7E1oRxPSRxJWacQM=
@@ -98,3 +100,5 @@ github.com/zeon-studio/hugoplate v0.0.0-20251201044416-6644f1011dc0 h1:mmXY8xOyW
 github.com/zeon-studio/hugoplate v0.0.0-20251201044416-6644f1011dc0/go.mod h1:YlRIwdTWidquf1dhtx+mDfu0I3KVrVQB4wi4UmHlK3E=
 github.com/zeon-studio/hugoplate v0.0.0-20260120074103-24b7759c1e6d h1:kmuK3ofvbtw42Wtl9ykk0lnlSQS452+awLRR5LCJ6d0=
 github.com/zeon-studio/hugoplate v0.0.0-20260120074103-24b7759c1e6d/go.mod h1:YlRIwdTWidquf1dhtx+mDfu0I3KVrVQB4wi4UmHlK3E=
+github.com/zeon-studio/hugoplate v0.0.0-20260209155632-62ee70b98f39 h1:4J1udCwH5yCc027th6F2YdniTFvcaDrQrK9qqvoQSjU=
+github.com/zeon-studio/hugoplate v0.0.0-20260209155632-62ee70b98f39/go.mod h1:YlRIwdTWidquf1dhtx+mDfu0I3KVrVQB4wi4UmHlK3E=
