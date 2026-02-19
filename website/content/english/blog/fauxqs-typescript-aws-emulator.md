@@ -182,7 +182,7 @@ Inside Docker, this is a non-issue because container networking handles it. Outs
 
 fauxqs provides four options:
 
-**Option 1: `fauxqs.dev` wildcard DNS (recommended for Docker setups).** A public DNS entry resolves `*.localhost.fauxqs.dev` to `127.0.0.1`, so virtual-hosted-style S3 requests work without `/etc/hosts` changes, custom request handlers, or `forcePathStyle`. This replicates the creative approach [pioneered by LocalStack](https://hashnode.localstack.cloud/efficient-localstack-s3-endpoint-configuration) with their `localhost.localstack.cloud` domain. Just point your S3 client at it:
+**Option 1: `fauxqs.dev` wildcard DNS (recommended if you need S3 beyond tests, e.g. for local development).** A public DNS entry resolves `*.localhost.fauxqs.dev` to `127.0.0.1`, so virtual-hosted-style S3 requests work without `/etc/hosts` changes, custom request handlers, or `forcePathStyle`. This replicates the creative approach [pioneered by LocalStack](https://hashnode.localstack.cloud/efficient-localstack-s3-endpoint-configuration) with their `localhost.localstack.cloud` domain. If you are using the official fauxqs Docker image, this is already the default and you don't need to configure anything. For custom setups, just point your S3 client at it:
 
 ```typescript
 const s3 = new S3Client({
@@ -191,6 +191,8 @@ const s3 = new S3Client({
   credentials: { accessKeyId: "test", secretAccessKey: "test" },
 });
 ```
+
+The Docker image also includes a built-in DNS server ([dnsmasq](https://thekelleys.org.uk/dnsmasq/doc.html)) that resolves the container hostname and all its subdomains to the container's own IP. This means other containers in your docker-compose setup can use virtual-hosted-style S3 URLs (e.g., `my-bucket.s3.fauxqs:4566`) without `forcePathStyle`, by pointing their DNS at the fauxqs container. This is useful when your application container needs to talk to S3 during local development.
 
 **Option 2: `interceptLocalhostDns()` (recommended for embedded library usage).** This patches Node.js `dns.lookup` so that any hostname ending in `.localhost` resolves to `127.0.0.1`. You call it once in your test setup, and every S3Client in the process works without any per-client configuration. Since it only affects `.localhost` subdomains, it's unlikely to interfere with anything else in your tests:
 
