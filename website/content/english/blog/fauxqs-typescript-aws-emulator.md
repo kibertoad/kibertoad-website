@@ -21,7 +21,7 @@ fauxqs emulates the core functionality of three AWS services on a single endpoin
 **SQS** (18 out of 24 API actions):
 - Full message lifecycle: send, receive, delete, visibility timeouts, delay queues, long polling
 - Batch operations for send, delete and visibility changes
-- Dead letter queues with configurable max receive count
+- [Dead letter queues](https://aws.amazon.com/what-is/dead-letter-queue/) (DLQ) with configurable max receive count
 - FIFO queues with message group ordering and deduplication
 - MD5 checksums that match the AWS algorithm, so SDK validation passes
 - *Not supported: IAM permission management (irrelevant since fauxqs doesn't enforce auth) and message move tasks (an operational feature for bulk-replaying DLQ messages)*
