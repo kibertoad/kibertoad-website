@@ -47,7 +47,7 @@ fauxqs emulates the core functionality of three AWS services on a single endpoin
 The primary benchmark comes from [message-queue-toolkit](https://github.com/kibertoad/message-queue-toolkit), which has a comprehensive SQS test suite. Running the full suite:
 
 - **LocalStack**: 3 minutes 14 seconds
-- **fauxqs**: 1 minute 40 seconds
+- **fauxqs**: 1 minute 26 seconds
 
 That's roughly a 2x speedup with zero configuration changes beyond swapping the endpoint URL. The improvement comes from several factors: eliminating the Docker overhead and network hop (fauxqs runs in-process, so message operations are essentially function calls routed through a local HTTP server), Node.js being faster than Python (which LocalStack is written in), and fauxqs using [Fastify](https://fastify.dev/) as its HTTP framework, which is one of the fastest in the Node.js ecosystem.
 
