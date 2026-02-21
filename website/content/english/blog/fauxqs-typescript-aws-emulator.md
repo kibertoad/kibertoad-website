@@ -21,6 +21,7 @@ This was one of the motivations behind building [fauxqs](https://github.com/kibe
 - **No Docker required for tests.** fauxqs is a Fastify app that can run directly inside your test process. `npx fauxqs` starts it as a standalone server, but you can also start it programmatically with `startFauxqs()` and avoid spawning a separate process entirely. This simplifies CI setup considerably and eliminates an entire class of "works on my machine" issues related to Docker networking, volume mounts and resource limits. For local development, if you need S3 (see the virtual-hosted-style DNS section below), you'll likely prefer running fauxqs via Docker with the wildcard DNS solution baked in.
 - **Pure TypeScript.** No JVM, no Python, no native binaries. If you have Node.js, you can run it. This also means you can embed it directly in your test setup with `startFauxqs()` and get programmatic access to create queues, topics and buckets before tests run.
 - **Queue inspection.** You can non-destructively peek at all messages in a queue (ready, in-flight, and delayed) without consuming them or affecting visibility timeouts. Available both as a programmatic API (`server.inspectQueue("my-queue")`) and via HTTP endpoints (`GET /_fauxqs/queues/my-queue`). Useful for debugging test failures when you need to see what's actually sitting in a queue.
+- **Fast state cleanup.** `server.reset()` clears all messages and S3 objects between tests while preserving resource definitions. No need to tear down and recreate queues, topics and buckets for each test — just reset and go.
 - **Init config.** You can pass a JSON file to pre-create queues, topics, subscriptions, and buckets on startup. This is useful for both local development and CI environments.
 - **Completely open and free, forever.** MIT-licensed with no plans to monetize any part of it, ever.
 
@@ -119,7 +120,7 @@ Working on MQT alongside brilliant engineers like Carlos Gamero and Daria Carlot
 
 fauxqs also includes a few features that go beyond what typical AWS emulators provide.
 
-Since fauxqs runs as a Fastify server you can embed directly in your test process via `startFauxqs()`, it exposes a full programmatic API. You can call `server.setup()` to pre-create queues, topics, subscriptions and buckets before your tests run, or use `server.inspectQueue()` to non-destructively peek at messages without consuming them. For standalone or Docker usage, you can achieve the same with an init config — a JSON file passed at startup that declaratively sets up all your resources.
+Since fauxqs runs as a Fastify server you can embed directly in your test process via `startFauxqs()`, it exposes a full programmatic API. You can call `server.setup()` to pre-create queues, topics, subscriptions and buckets before your tests run, or use `server.inspectQueue()` to non-destructively peek at messages without consuming them. Between tests, `server.reset()` clears all messages and S3 objects while preserving your resource definitions — queues, topics, subscriptions and buckets stay intact, so you get a clean slate without the overhead of tearing down and recreating everything. If you do need a full teardown, `server.purgeAll()` removes everything including the resources themselves. For standalone or Docker usage, you can achieve the same with an init config — a JSON file passed at startup that declaratively sets up all your resources.
 
 But the feature most worth exploring in depth is the message spy system.
 
@@ -233,7 +234,7 @@ You might wonder why an SQS/SNS emulator also includes S3. The reason is practic
 
 Getting S3 to work with local emulators outside of Docker networking has a well-known wrinkle. By default, the AWS SDK sends S3 requests using virtual-hosted-style URLs, where the bucket name is prepended to the hostname: `my-bucket.s3.localhost:4566`. This means DNS needs to resolve `*.localhost` subdomains to `127.0.0.1`, which doesn't happen automatically on all platforms.
 
-Inside Docker, this is a non-issue because container networking handles it. Outside Docker, you need to deal with it explicitly. If you need S3 for local development (not just tests), you'll likely benefit from running the official [fauxqs Docker image](https://github.com/kibertoad/fauxqs) with the wildcard DNS solution baked in, rather than using the embedded library version.
+The recommended approach is a **hybrid model**: use fauxqs as an embedded library in your test suites, and use the Docker image for local development. For **tests**, the embedded library mode avoids the DNS issue entirely — you can use `interceptLocalhostDns()` or `createLocalhostHandler()` to handle virtual-hosted-style resolution within Node.js, and you get the full benefit of the programmatic API, message spies, `reset()` between tests, and no Docker overhead. For **local development**, run the official [fauxqs Docker image](https://github.com/kibertoad/fauxqs) which has wildcard DNS baked in via dnsmasq — other containers in your docker-compose setup can use virtual-hosted-style S3 URLs without any per-client configuration.
 
 fauxqs provides four options:
 
@@ -293,6 +294,14 @@ To be clear: fauxqs is a development and testing tool. It is not intended for ru
 - S3 features like versioning, lifecycle policies and encryption are not implemented.
 
 If you need full AWS parity across dozens of services, LocalStack remains the more comprehensive option.
+
+## Migrating from LocalStack
+
+If you're currently using LocalStack and want to try fauxqs, see the [LocalStack migration guide](https://github.com/kibertoad/fauxqs#migrating-from-localstack) in the README. For SNS/SQS-only setups it's a one-line Docker image swap; when S3 is involved there are a few extra steps, and the recommended hybrid path is to use fauxqs as an embedded library for your test suites while keeping Docker Compose for local development environments.
+
+## Examples
+
+The [`examples/`](https://github.com/kibertoad/fauxqs/tree/main/examples) directory in the repository contains runnable TypeScript examples covering fauxqs-specific features beyond standard AWS SDK usage: programmatic API usage, message spy functionality, init configs, queue inspection, Docker standalone and container-to-container communication, and a recommended dual-mode testing approach with vitest.
 
 ## Getting Started
 
