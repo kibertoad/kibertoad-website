@@ -62,6 +62,8 @@ Beyond API compatibility, performance was a first-class goal for fauxqs. The rea
 
 That's roughly a **1.5x speedup on a real integration test suite**. In CI pipelines where these tests run on every push, shaving a third off the feedback loop adds up quickly.
 
+And this only measures test execution time. There's also the startup overhead: pulling and booting the LocalStack Docker image takes around **30 seconds**, while `startFauxqs()` brings up the Fastify server in about **250 milliseconds**.
+
 Beyond carefully reviewing code for bottlenecks and clear wins, the speedup comes from:
 
 * Eliminating the Docker overhead and network hop — fauxqs runs in-process, so message operations are essentially function calls routed through a local HTTP server
