@@ -12,7 +12,17 @@ draft: false
 
 If you are running integration tests against AWS services like SQS, SNS or S3, chances are you've been using [LocalStack](https://localstack.cloud/). It has been the go-to solution for local AWS emulation for years, and for good reason. However, LocalStack recently [announced](https://blog.localstack.cloud/the-road-ahead-for-localstack/) that starting March 2026 the free Community image will require account authentication, and the free tier will no longer include CI/CD credits. For many open-source projects and small teams that rely on LocalStack in their CI pipelines, this is a meaningful change.
 
-This was one of the motivations behind building [fauxqs](https://github.com/kibertoad/fauxqs), a free, MIT-licensed, pure-TypeScript emulator for SQS, SNS and S3. It runs as a single in-process server with no Docker, no Java, no binary dependencies. Point your AWS SDK clients at it and run your tests.
+This was one of the motivations behind building [fauxqs](https://github.com/kibertoad/fauxqs) ("faux queues"), a free, MIT-licensed, pure-TypeScript emulator for SQS, SNS and S3. It runs as a single in-process server with no Docker, no Java, no binary dependencies. Point your AWS SDK clients at it and run your tests.
+
+## Key Differentiators
+
+- **Significantly faster.** Roughly 2x faster on real-world test suites, and up to 2.8x on isolated throughput benchmarks. See the [Performance](#performance) section for the full breakdown.
+- **Message spy system.** A built-in testing primitive for asserting on asynchronous event flows. See the dedicated section below.
+- **No Docker required for tests.** fauxqs is a Fastify app that can run directly inside your test process. `npx fauxqs` starts it as a standalone server, but you can also start it programmatically with `startFauxqs()` and avoid spawning a separate process entirely. This simplifies CI setup considerably and eliminates an entire class of "works on my machine" issues related to Docker networking, volume mounts and resource limits. For local development, if you need S3 (see the virtual-hosted-style DNS section below), you'll likely prefer running fauxqs via Docker with the wildcard DNS solution baked in.
+- **Pure TypeScript.** No JVM, no Python, no native binaries. If you have Node.js, you can run it. This also means you can embed it directly in your test setup with `startFauxqs()` and get programmatic access to create queues, topics and buckets before tests run.
+- **Queue inspection.** You can non-destructively peek at all messages in a queue (ready, in-flight, and delayed) without consuming them or affecting visibility timeouts. Available both as a programmatic API (`server.inspectQueue("my-queue")`) and via HTTP endpoints (`GET /_fauxqs/queues/my-queue`). Useful for debugging test failures when you need to see what's actually sitting in a queue.
+- **Init config.** You can pass a JSON file to pre-create queues, topics, subscriptions, and buckets on startup. This is useful for both local development and CI environments.
+- **Completely open and free, forever.** MIT-licensed with no plans to monetize any part of it, ever.
 
 ## What Does It Cover?
 
@@ -44,14 +54,18 @@ fauxqs emulates the core functionality of three AWS services on a single endpoin
 
 ## Performance
 
-Beyond API compatibility, performance was a first-class goal for fauxqs. The real-world validation comes from [message-queue-toolkit](https://github.com/kibertoad/message-queue-toolkit), which has a comprehensive SQS test suite covering queues, topics, subscriptions, DLQs, FIFO ordering, filter policies and batch operations. Running the entire suite end-to-end:
+Beyond API compatibility, performance was a first-class goal for fauxqs. The real-world validation comes from [message-queue-toolkit](https://github.com/kibertoad/message-queue-toolkit), which has a comprehensive messaging test suite covering queues, topics, subscriptions, DLQs, FIFO ordering, filter policies and batch operations. Running the entire suite end-to-end:
 
 - **LocalStack**: 3 minutes 14 seconds
 - **fauxqs**: 1 minute 26 seconds
 
 That's roughly a **2x speedup on a real integration test suite**, with zero changes to the test logic — just swapping the endpoint URL. In CI pipelines where these tests run on every push, halving the feedback loop adds up quickly.
 
-Beyond carefully reviewing code for bottlenecks and clear wins, the speedup comes from fauxqs eliminating the Docker overhead and network hop (it runs in-process, so message operations are essentially function calls routed through a local HTTP server), Node.js is faster than Python (which LocalStack is written in), and fauxqs is built on [Fastify](https://fastify.dev/), one of the fastest HTTP frameworks in the Node.js ecosystem.
+Beyond carefully reviewing code for bottlenecks and clear wins, the speedup comes from:
+
+* Eliminating the Docker overhead and network hop — fauxqs runs in-process, so message operations are essentially function calls routed through a local HTTP server
+* Node.js being faster than Python, which LocalStack is written in
+* fauxqs being built on [Fastify](https://fastify.dev/), one of the fastest HTTP frameworks in the Node.js ecosystem
 
 ### SQS Throughput Benchmarks
 
@@ -82,7 +96,7 @@ To isolate and quantify the raw throughput difference more precisely, fauxqs inc
 | fauxqs-docker-lite | 12.21s | 12.22s | 12.24s | 19.5ms |
 | localstack | 21.30s | 21.32s | 21.47s | 108.3ms |
 
-**Total wall-clock time (full suite):**
+**Total wall-clock time (all iterations across the full suite):**
 
 | Setup | Total |
 |-------|-------|
@@ -101,15 +115,13 @@ Working on MQT alongside brilliant engineers like Carlos Gamero and Daria Carlot
 
 100% of message-queue-toolkit tests pass with fauxqs. These tests were previously running on LocalStack, and the migration required no changes to the test logic itself.
 
-## Key Differentiators
+## Beyond Emulation: Features You Won't Find in Other Emulators
 
-- **Significantly faster.** In a real-world test suite ([message-queue-toolkit](https://github.com/kibertoad/message-queue-toolkit)), switching from LocalStack to fauxqs cut execution time roughly in half — from 3 minutes 14 seconds to 1 minute 26 seconds — with no changes to the test logic. Isolated throughput benchmarks show even larger gains, up to 2.8x for in-process usage. See the [Performance](#performance) section for the full breakdown.
-- **Message spy system.** A built-in testing primitive for asserting on asynchronous event flows. See the dedicated section below.
-- **No Docker required for tests.** fauxqs is a Fastify app that can run directly inside your test process. `npx fauxqs` starts it as a standalone server, but you can also start it programmatically with `startFauxqs()` and avoid spawning a separate process entirely. This simplifies CI setup considerably and eliminates an entire class of "works on my machine" issues related to Docker networking, volume mounts and resource limits. For local development, if you need S3 (see the virtual-hosted-style DNS section below), you'll likely prefer running fauxqs via Docker with the wildcard DNS solution baked in.
-- **Pure TypeScript.** No JVM, no Python, no native binaries. If you have Node.js, you can run it. This also means you can embed it directly in your test setup with `startFauxqs()` and get programmatic access to create queues, topics and buckets before tests run.
-- **Queue inspection.** You can non-destructively peek at all messages in a queue (ready, in-flight, and delayed) without consuming them or affecting visibility timeouts. Available both as a programmatic API (`server.inspectQueue("my-queue")`) and via HTTP endpoints (`GET /_fauxqs/queues/my-queue`). Useful for debugging test failures when you need to see what's actually sitting in a queue.
-- **Init config.** You can pass a JSON file to pre-create queues, topics, subscriptions, and buckets on startup. This is useful for both local development and CI environments.
-- **Completely open and free, forever.** MIT-licensed with no plans to monetize any part of it, ever.
+fauxqs also includes a few features that go beyond what typical AWS emulators provide.
+
+Since fauxqs runs as a Fastify server you can embed directly in your test process via `startFauxqs()`, it exposes a full programmatic API. You can call `server.setup()` to pre-create queues, topics, subscriptions and buckets before your tests run, or use `server.inspectQueue()` to non-destructively peek at messages without consuming them. For standalone or Docker usage, you can achieve the same with an init config — a JSON file passed at startup that declaratively sets up all your resources.
+
+But the feature most worth exploring in depth is the message spy system.
 
 ## Message Spy: Making Async Testing Feel Like REST Testing
 
@@ -309,6 +321,6 @@ server.setup({
 await server.stop();
 ```
 
-Point your AWS SDK clients at the server endpoint and everything works as expected. The project is MIT-licensed and available on [GitHub](https://github.com/kibertoad/fauxqs) and [npm](https://www.npmjs.com/package/fauxqs).
+The project is MIT-licensed and available on [GitHub](https://github.com/kibertoad/fauxqs) and [npm](https://www.npmjs.com/package/fauxqs).
 
 Give it a try, and if you run into any issues or have suggestions, please [open an issue](https://github.com/kibertoad/fauxqs/issues) on GitHub. Contributions are welcome!
