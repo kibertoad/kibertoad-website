@@ -1,4 +1,14 @@
 {
+  "description": "Hugo website with Hugoplate theme",
+  "name": "kibertoad-website",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "build": "hugo --gc --minify",
+    "build:stats": "hugo --templateMetrics --logLevel info",
+    "dev": "hugo server",
+    "preview": "hugo server -e production --minify"
+  },
   "comments": {
     "dependencies": {},
     "devDependencies": {
@@ -10,20 +20,11 @@
     }
   },
   "dependencies": {},
-  "description": "Hugo website with Hugoplate theme",
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.18",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.19",
     "tailwind-bootstrap-grid": "^6.0.0",
     "tailwindcss": "^4.1.18"
-  },
-  "license": "MIT",
-  "name": "kibertoad-website",
-  "scripts": {
-    "build": "hugo --gc --minify",
-    "dev": "hugo server",
-    "preview": "hugo server -e production --minify"
-  },
-  "version": "1.0.0"
+  }
 }
