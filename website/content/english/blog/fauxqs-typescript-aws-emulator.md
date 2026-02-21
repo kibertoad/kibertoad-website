@@ -3,7 +3,7 @@ title: "fauxqs: a Free, Pure-TypeScript SQS/SNS/S3 Emulator"
 meta_title: "fauxqs - Free TypeScript SQS SNS S3 Emulator"
 description: "Introducing fauxqs, a lightweight in-memory AWS emulator for SQS, SNS and S3 written in pure TypeScript. Faster tests, zero Docker dependency, and full API compatibility."
 date: 2026-02-19T00:00:00Z
-image: ""
+image: "/images/fauxqs-logo.jpg"
 categories: ["TypeScript", "Testing"]
 author: "kibertoad"
 tags: ["aws", "sqs", "sns", "s3", "testing", "typescript", "emulator"]
@@ -67,8 +67,6 @@ Beyond carefully reviewing code for bottlenecks and clear wins, the speedup come
 * Eliminating the Docker overhead and network hop — fauxqs runs in-process, so message operations are essentially function calls routed through a local HTTP server
 * Node.js being faster than Python, which LocalStack is written in
 * fauxqs being built on [Fastify](https://fastify.dev/), one of the fastest HTTP frameworks in the Node.js ecosystem
-
-### SQS Throughput Benchmarks
 
 To isolate and quantify the raw throughput difference more precisely, fauxqs includes a dedicated [benchmark suite](https://github.com/kibertoad/fauxqs/blob/main/benchmarks/BENCHMARKING.md) that measures single-message SQS operations across four deployment modes:
 
