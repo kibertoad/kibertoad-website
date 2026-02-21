@@ -58,7 +58,7 @@ fauxqs emulates the core functionality of three AWS services on a single endpoin
 Beyond API compatibility, performance was a first-class goal for fauxqs. The real-world validation comes from [message-queue-toolkit](https://github.com/kibertoad/message-queue-toolkit), which has a comprehensive messaging test suite covering queues, topics, subscriptions, DLQs, FIFO ordering, filter policies and batch operations. Running the entire suite end-to-end:
 
 - **LocalStack**: 1 minute 34 seconds
-- **fauxqs**: 1 minute 1 second
+- **fauxqs**: 59 seconds
 
 That's roughly a **1.5x speedup on a real integration test suite**. In CI pipelines where these tests run on every push, shaving a third off the feedback loop adds up quickly.
 
