@@ -44,16 +44,18 @@ fauxqs emulates the core functionality of three AWS services on a single endpoin
 
 ## Performance
 
-The primary benchmark comes from [message-queue-toolkit](https://github.com/kibertoad/message-queue-toolkit), which has a comprehensive SQS test suite. Running the full suite:
+Beyond API compatibility, performance was a first-class goal for fauxqs. The real-world validation comes from [message-queue-toolkit](https://github.com/kibertoad/message-queue-toolkit), which has a comprehensive SQS test suite covering queues, topics, subscriptions, DLQs, FIFO ordering, filter policies and batch operations. Running the entire suite end-to-end:
 
 - **LocalStack**: 3 minutes 14 seconds
 - **fauxqs**: 1 minute 26 seconds
 
-That's roughly a 2x speedup with zero configuration changes beyond swapping the endpoint URL. The improvement comes from several factors: eliminating the Docker overhead and network hop (fauxqs runs in-process, so message operations are essentially function calls routed through a local HTTP server), Node.js being faster than Python (which LocalStack is written in), and fauxqs using [Fastify](https://fastify.dev/) as its HTTP framework, which is one of the fastest in the Node.js ecosystem.
+That's roughly a **2x speedup on a real integration test suite**, with zero changes to the test logic — just swapping the endpoint URL. In CI pipelines where these tests run on every push, halving the feedback loop adds up quickly.
+
+Other than carefully reviewing code for bottlenecks and clear wins, it is worth pointing out that fauxqs eliminates the Docker overhead and network hop (it runs in-process, so message operations are essentially function calls routed through a local HTTP server), Node.js is faster than Python (which LocalStack is written in), and fauxqs is built on [Fastify](https://fastify.dev/), one of the fastest HTTP frameworks in the Node.js ecosystem.
 
 ### SQS Throughput Benchmarks
 
-To quantify the raw throughput difference more precisely, fauxqs includes a dedicated [benchmark suite](https://github.com/kibertoad/fauxqs/blob/main/benchmarks/BENCHMARKING.md) that measures single-message SQS operations across four deployment modes:
+To isolate and quantify the raw throughput difference more precisely, fauxqs includes a dedicated [benchmark suite](https://github.com/kibertoad/fauxqs/blob/main/benchmarks/BENCHMARKING.md) that measures single-message SQS operations across four deployment modes:
 
 | Setup | Description |
 |-------|-------------|
@@ -101,6 +103,7 @@ Working on MQT alongside brilliant engineers like Carlos Gamero and Daria Carlot
 
 ## Key Differentiators
 
+- **Significantly faster.** In a real-world test suite ([message-queue-toolkit](https://github.com/kibertoad/message-queue-toolkit)), switching from LocalStack to fauxqs cut execution time roughly in half — from 3 minutes 14 seconds to 1 minute 26 seconds — with no changes to the test logic. Isolated throughput benchmarks show even larger gains, up to 2.8x for in-process usage. See the [Performance](#performance) section for the full breakdown.
 - **Message spy system.** A built-in testing primitive for asserting on asynchronous event flows. See the dedicated section below.
 - **No Docker required for tests.** fauxqs is a Fastify app that can run directly inside your test process. `npx fauxqs` starts it as a standalone server, but you can also start it programmatically with `startFauxqs()` and avoid spawning a separate process entirely. This simplifies CI setup considerably and eliminates an entire class of "works on my machine" issues related to Docker networking, volume mounts and resource limits. For local development, if you need S3 (see the virtual-hosted-style DNS section below), you'll likely prefer running fauxqs via Docker with the wildcard DNS solution baked in.
 - **Pure TypeScript.** No JVM, no Python, no native binaries. If you have Node.js, you can run it. This also means you can embed it directly in your test setup with `startFauxqs()` and get programmatic access to create queues, topics and buckets before tests run.
