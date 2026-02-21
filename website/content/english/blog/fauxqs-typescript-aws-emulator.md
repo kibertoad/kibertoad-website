@@ -51,6 +51,46 @@ The primary benchmark comes from [message-queue-toolkit](https://github.com/kibe
 
 That's roughly a 2x speedup with zero configuration changes beyond swapping the endpoint URL. The improvement comes from several factors: eliminating the Docker overhead and network hop (fauxqs runs in-process, so message operations are essentially function calls routed through a local HTTP server), Node.js being faster than Python (which LocalStack is written in), and fauxqs using [Fastify](https://fastify.dev/) as its HTTP framework, which is one of the fastest in the Node.js ecosystem.
 
+### SQS Throughput Benchmarks
+
+To quantify the raw throughput difference more precisely, fauxqs includes a dedicated [benchmark suite](https://github.com/kibertoad/fauxqs/blob/main/benchmarks/BENCHMARKING.md) that measures single-message SQS operations across four deployment modes:
+
+| Setup | Description |
+|-------|-------------|
+| **fauxqs-library** | In-process via `startFauxqs()`, no network overhead |
+| **fauxqs-docker-official** | Pre-built Docker image with dnsmasq DNS server |
+| **fauxqs-docker-lite** | Generic `node:24-alpine` container running `npx fauxqs` |
+| **localstack** | LocalStack Docker image with `SERVICES=sqs` |
+
+**Publish 5,000 messages:**
+
+| Setup | Mean | p75 | p99 | Std Dev |
+|-------|------|-----|-----|---------|
+| fauxqs-library | 3.55s | 3.56s | 3.59s | 38.5ms |
+| fauxqs-docker-official | 5.79s | 5.81s | 5.90s | 66.9ms |
+| fauxqs-docker-lite | 5.83s | 5.87s | 5.91s | 62.2ms |
+| localstack | 10.25s | 10.27s | 10.35s | 63.0ms |
+
+**Consume 5,000 messages:**
+
+| Setup | Mean | p75 | p99 | Std Dev |
+|-------|------|-----|-----|---------|
+| fauxqs-library | 7.66s | 7.69s | 7.74s | 59.9ms |
+| fauxqs-docker-official | 12.18s | 12.21s | 12.21s | 25.4ms |
+| fauxqs-docker-lite | 12.21s | 12.22s | 12.24s | 19.5ms |
+| localstack | 21.30s | 21.32s | 21.47s | 108.3ms |
+
+**Total wall-clock time (full suite):**
+
+| Setup | Total |
+|-------|-------|
+| fauxqs-library | 90.69s |
+| fauxqs-docker-official | 145.49s |
+| fauxqs-docker-lite | 158.24s |
+| localstack | 256.32s |
+
+The in-process library mode is roughly **2.8x faster** than LocalStack overall. Even the Docker deployments are about **1.6–1.8x faster**. The benchmarks use sequential single-message operations across 5,000 iterations with [tinybench](https://github.com/tinylibs/tinybench), discarding 1 warmup cycle.
+
 ## Who Built It
 
 I'm a principal software engineer at [Lokalise](https://lokalise.com/), lead maintainer of [knex.js](https://github.com/knex/knex), and creator of [node-service-template](https://github.com/kibertoad/node-service-template), with about 8 years of open source experience. Prior to building fauxqs, I spent several years working on [message-queue-toolkit](https://github.com/kibertoad/message-queue-toolkit) (MQT) — a framework-style abstraction layer for message queues that provides reusable base classes, validation, error handling, and lifecycle management for building message-driven services. Basically "message queue best practices as a library" (which will be a topic of a separate blog post).
