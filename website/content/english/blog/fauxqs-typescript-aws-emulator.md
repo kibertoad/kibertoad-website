@@ -237,7 +237,7 @@ Inside Docker, this is a non-issue because container networking handles it. Outs
 
 fauxqs provides four options:
 
-**Option 1: `fauxqs.dev` wildcard DNS (recommended if you need S3 beyond tests, e.g. for local development).** A public DNS entry resolves `*.localhost.fauxqs.dev` to `127.0.0.1`, so virtual-hosted-style S3 requests work without `/etc/hosts` changes, custom request handlers, or `forcePathStyle`. This replicates the creative approach [pioneered by LocalStack](https://hashnode.localstack.cloud/efficient-localstack-s3-endpoint-configuration) with their `localhost.localstack.cloud` domain. If you are using the official fauxqs Docker image, this is already the default and you don't need to configure anything. For custom setups, just point your S3 client at it:
+**Option 1: `fauxqs.dev` wildcard DNS (recommended if you need S3 beyond tests, e.g. for local development; less ideal for tests, as Docker adds latency and you lose the programmatic management API).** A public DNS entry resolves `*.localhost.fauxqs.dev` to `127.0.0.1`, so virtual-hosted-style S3 requests work without `/etc/hosts` changes, custom request handlers, or `forcePathStyle`. This replicates the creative approach [pioneered by LocalStack](https://hashnode.localstack.cloud/efficient-localstack-s3-endpoint-configuration) with their `localhost.localstack.cloud` domain. If you are using the official fauxqs Docker image, this is already the default and you don't need to configure anything. For custom setups, just point your S3 client at it:
 
 ```typescript
 const s3 = new S3Client({
