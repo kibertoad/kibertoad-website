@@ -51,7 +51,7 @@ Beyond API compatibility, performance was a first-class goal for fauxqs. The rea
 
 That's roughly a **2x speedup on a real integration test suite**, with zero changes to the test logic — just swapping the endpoint URL. In CI pipelines where these tests run on every push, halving the feedback loop adds up quickly.
 
-Other than carefully reviewing code for bottlenecks and clear wins, it is worth pointing out that fauxqs eliminates the Docker overhead and network hop (it runs in-process, so message operations are essentially function calls routed through a local HTTP server), Node.js is faster than Python (which LocalStack is written in), and fauxqs is built on [Fastify](https://fastify.dev/), one of the fastest HTTP frameworks in the Node.js ecosystem.
+Beyond carefully reviewing code for bottlenecks and clear wins, the speedup comes from fauxqs eliminating the Docker overhead and network hop (it runs in-process, so message operations are essentially function calls routed through a local HTTP server), Node.js is faster than Python (which LocalStack is written in), and fauxqs is built on [Fastify](https://fastify.dev/), one of the fastest HTTP frameworks in the Node.js ecosystem.
 
 ### SQS Throughput Benchmarks
 
