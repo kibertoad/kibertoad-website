@@ -18,7 +18,7 @@ This was one of the motivations behind building [fauxqs](https://github.com/kibe
 
 ## What Does It Cover?
 
-fauxqs emulates the core functionality of three AWS services on a single endpoint:
+fauxqs emulates the core functionality of three AWS services on a single endpoint. Beyond API compatibility, it aims to replicate the format and structure validation of all inputs that AWS has documented — so if your code would fail against real AWS due to invalid attributes, malformed messages or out-of-range parameters, it will fail the same way against fauxqs.
 
 **SQS:**
 - Full message lifecycle: send, receive, delete, visibility timeouts, delay queues, long polling
