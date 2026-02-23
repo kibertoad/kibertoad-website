@@ -2,7 +2,7 @@
 title: "fauxqs: a Free, Pure-TypeScript SQS/SNS/S3 Emulator"
 meta_title: "fauxqs - Free TypeScript SQS SNS S3 Emulator"
 description: "Introducing fauxqs, a lightweight in-memory AWS emulator for SQS, SNS and S3 written in pure TypeScript. Faster tests, zero Docker dependency, and full API compatibility."
-date: 2026-02-19T00:00:00Z
+date: 2026-02-23T00:00:00Z
 image: "/images/fauxqs-logo.jpg"
 categories: ["TypeScript", "Testing"]
 author: "kibertoad"
@@ -10,9 +10,49 @@ tags: ["aws", "sqs", "sns", "s3", "testing", "typescript", "emulator"]
 draft: false
 ---
 
+## Introduction
+
 If you are running integration tests against AWS services like SQS, SNS or S3, chances are you've been using [LocalStack](https://localstack.cloud/). It has been the go-to solution for local AWS emulation for years, and for good reason. However, LocalStack recently [announced](https://blog.localstack.cloud/the-road-ahead-for-localstack/) that starting March 2026 the free Community image will require account authentication, and the free tier will no longer include CI/CD credits. For many open-source projects and small teams that rely on LocalStack in their CI pipelines, this is a meaningful change.
 
 This was one of the motivations behind building [fauxqs](https://github.com/kibertoad/fauxqs) ("faux queues"), a free, MIT-licensed, pure-TypeScript emulator for SQS, SNS and S3. It runs as a single in-process server with no Docker, no Java, no binary dependencies. Point your AWS SDK clients at it and run your tests.
+
+## What Does It Cover?
+
+fauxqs emulates the core functionality of three AWS services on a single endpoint:
+
+**SQS:**
+- Full message lifecycle: send, receive, delete, visibility timeouts, delay queues, long polling
+- Batch operations for send, delete and visibility changes
+- [Dead letter queues](https://aws.amazon.com/what-is/dead-letter-queue/) (DLQ) with configurable max receive count
+- FIFO queues with message group ordering, per-group locking, deduplication and sequence numbers
+- Message attributes with MD5 checksums matching the AWS algorithm
+- Queue attribute range validation, message size validation, unicode character validation
+- Queue tags
+- *Not supported: IAM permission management (irrelevant since fauxqs doesn't enforce auth), dead letter source queue listing, and message move tasks*
+
+**SNS:**
+- SNS-to-SQS fan-out delivery to all confirmed subscriptions
+- Filter policies with both `MessageAttributes` and `MessageBody` scope, supporting exact match, prefix, suffix, anything-but, numeric ranges, exists, null conditions, and `$or` top-level grouping
+- Raw message delivery, FIFO topics, batch publish
+- Topic and subscription idempotency with conflict detection
+- Subscription attribute validation
+- Topic and subscription tags
+- *Not supported: permission management, data protection policies, platform applications, SMS, and non-SQS delivery protocols*
+
+**S3:**
+- Bucket management: CreateBucket (idempotent, including directory buckets), DeleteBucket, HeadBucket, ListBuckets
+- Object operations: PutObject, GetObject, DeleteObject, HeadObject, CopyObject (same-bucket and cross-bucket), RenameObject (directory buckets)
+- Multipart uploads with correct multipart ETag calculation, metadata preservation and part overwrite support
+- ListObjectsV2 with prefix filtering, delimiter-based virtual directories and continuation tokens
+- GetObjectAttributes with selective metadata retrieval
+- Stream uploads with AWS chunked transfer encoding support
+- Checksums: CRC32, SHA1, SHA256 stored on upload and returned on download, with composite checksums for multipart uploads
+- User metadata, bulk delete, keys with slashes
+- Both path-style and virtual-hosted-style URLs
+- *Not supported: versioning, lifecycle policies, encryption, ACLs, bucket configuration (CORS, replication, logging, website, notifications, policy), object lock, tagging, and public access block*
+
+**STS:**
+- `GetCallerIdentity` only. The AWS SDK and various AWS tooling call this to verify credentials before doing anything else. Without it, they fail immediately when pointed at a local emulator. fauxqs returns a mock identity so they can proceed.
 
 ## Key Differentiators
 
@@ -24,34 +64,6 @@ This was one of the motivations behind building [fauxqs](https://github.com/kibe
 - **Fast state cleanup.** `server.reset()` clears all messages and S3 objects between tests while preserving resource definitions. No need to tear down and recreate queues, topics and buckets for each test — just reset and go.
 - **Init config.** You can pass a JSON file to pre-create queues, topics, subscriptions, and buckets on startup. This is useful for both local development and CI environments.
 - **Completely open and free, forever.** MIT-licensed with no plans to monetize any part of it, ever.
-
-## What Does It Cover?
-
-fauxqs emulates the core functionality of three AWS services on a single endpoint:
-
-**SQS** (18 out of 24 API actions):
-- Full message lifecycle: send, receive, delete, visibility timeouts, delay queues, long polling
-- Batch operations for send, delete and visibility changes
-- [Dead letter queues](https://aws.amazon.com/what-is/dead-letter-queue/) (DLQ) with configurable max receive count
-- FIFO queues with message group ordering and deduplication
-- MD5 checksums that match the AWS algorithm, so SDK validation passes
-- *Not supported: IAM permission management (irrelevant since fauxqs doesn't enforce auth) and message move tasks (an operational feature for bulk-replaying DLQ messages)*
-
-**SNS** (20 out of 24 API actions):
-- Topic and subscription management with SNS-to-SQS fan-out delivery
-- Filter policies with all the standard operators (prefix, suffix, anything-but, numeric ranges, `$or`)
-- Raw message delivery, FIFO topics, batch publish
-- *Not supported: platform applications, SMS, and non-SQS delivery protocols*
-
-**S3** (20 out of 23 API actions):
-- Bucket and object CRUD with multipart uploads
-- ListObjectsV2 with prefix filtering and virtual directories
-- Cross-bucket copy, user metadata, bulk delete
-- Both path-style and virtual-hosted-style URLs
-- *Not supported: versioning, lifecycle policies, encryption, ACLs*
-
-**STS** (1 out of 4 API actions):
-- `GetCallerIdentity` only. The AWS SDK and various AWS tooling call this to verify credentials before doing anything else. Without it, they fail immediately when pointed at a local emulator. fauxqs returns a mock identity so they can proceed.
 
 ## Performance
 
@@ -121,6 +133,26 @@ Working on MQT alongside brilliant engineers like Carlos Gamero and Daria Carlot
 fauxqs also includes a few features that go beyond what typical AWS emulators provide.
 
 Since fauxqs runs as a Fastify server you can embed directly in your test process via `startFauxqs()`, it exposes a full programmatic API. You can call `server.setup()` to pre-create queues, topics, subscriptions and buckets before your tests run, or use `server.inspectQueue()` to non-destructively peek at messages without consuming them. Between tests, `server.reset()` clears all messages and S3 objects while preserving your resource definitions — queues, topics, subscriptions and buckets stay intact, so you get a clean slate without the overhead of tearing down and recreating everything. If you do need a full teardown, `server.purgeAll()` removes everything including the resources themselves. For standalone or Docker usage, you can achieve the same with an init config — a JSON file passed at startup that declaratively sets up all your resources.
+
+You can also send messages and publish to topics programmatically, without instantiating SDK clients:
+
+```typescript
+// SQS: enqueue a message directly
+const { messageId, md5OfBody } = server.sendMessage("my-queue", "hello world");
+
+// With message attributes and delay
+server.sendMessage("my-queue", JSON.stringify({ orderId: "123" }), {
+  messageAttributes: {
+    eventType: { DataType: "String", StringValue: "order.created" },
+  },
+  delaySeconds: 10,
+});
+
+// SNS: publish to a topic (fans out to all SQS subscriptions)
+const { messageId: snsMessageId } = server.publish("my-topic", "event payload");
+```
+
+Both methods validate inputs (message body, size limits, FIFO deduplication) and emit spy events automatically, so they behave identically to SDK-sent messages from the emulator's perspective.
 
 But the feature most worth exploring in depth is the message spy system.
 
