@@ -56,7 +56,7 @@ fauxqs emulates the core functionality of three AWS services on a single endpoin
 
 ## Key Differentiators
 
-- **Significantly faster.** Roughly 2x faster on real-world test suites, and up to 2.8x on isolated throughput benchmarks. See the [Performance](#performance) section for the full breakdown.
+- **Significantly faster.** Roughly 1.5x faster on real-world test suites, and up to 2.8x on isolated throughput benchmarks. See the [Performance](#performance) section for the full breakdown.
 - **Message spy system.** A built-in testing primitive for asserting on asynchronous event flows. See the dedicated section below.
 - **No Docker required for tests.** fauxqs is a Fastify app that can run directly inside your test process. `npx fauxqs` starts it as a standalone server, but you can also start it programmatically with `startFauxqs()` and avoid spawning a separate process entirely. This simplifies CI setup considerably and eliminates an entire class of "works on my machine" issues related to Docker networking, volume mounts and resource limits. For local development, if you need S3 (see the virtual-hosted-style DNS section below), you'll likely prefer running fauxqs via Docker with the wildcard DNS solution baked in.
 - **Pure TypeScript.** No JVM, no Python, no native binaries. If you have Node.js, you can run it. This also means you can embed it directly in your test setup with `startFauxqs()` and get programmatic access to create queues, topics and buckets before tests run.
