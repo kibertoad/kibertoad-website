@@ -14,7 +14,7 @@ draft: false
 
 If you are running integration tests against AWS services like SQS, SNS or S3, chances are you've been using [LocalStack](https://localstack.cloud/). It has been the go-to solution for local AWS emulation for years, and for good reason. However, LocalStack recently [announced](https://blog.localstack.cloud/the-road-ahead-for-localstack/) that starting March 2026 the free Community image will require account authentication, and the free tier will no longer include CI/CD credits. For many open-source projects and small teams that rely on LocalStack in their CI pipelines, this is a meaningful change.
 
-This was one of the motivations behind building [fauxqs](https://github.com/kibertoad/fauxqs) ("faux queues"), a free, MIT-licensed, pure-TypeScript emulator for SQS, SNS and S3. It runs as a single in-process server with no Docker, no Java, no binary dependencies. All state is in-memory by default, with optional SQLite-based persistence for local development workflows where you want state to survive restarts. Point your AWS SDK clients at it and run your tests.
+This was one of the motivations behind building [fauxqs](https://github.com/kibertoad/fauxqs) (short for "faux queues", pronounced as "fox"), a free, MIT-licensed, pure-TypeScript emulator for SQS, SNS and S3. It runs as a single in-process server with no Docker, no Java, no binary dependencies. All state is in-memory by default, with optional SQLite-based persistence for local development workflows where you want state to survive restarts. Point your AWS SDK clients at it and run your tests.
 
 ## What Does It Cover?
 
