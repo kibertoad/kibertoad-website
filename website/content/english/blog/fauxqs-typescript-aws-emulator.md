@@ -1,8 +1,8 @@
 ---
 title: "fauxqs: a Free, Pure-TypeScript SQS/SNS/S3 Emulator"
 meta_title: "fauxqs - Free TypeScript SQS SNS S3 Emulator"
-description: "Introducing fauxqs, a lightweight in-memory AWS emulator for SQS, SNS and S3 written in pure TypeScript. Faster tests, zero Docker dependency, and full API compatibility."
-date: 2026-02-23T00:00:00Z
+description: "Introducing fauxqs, a lightweight AWS emulator for SQS, SNS and S3 written in pure TypeScript. In-memory by default with optional SQLite persistence. Runs in-process or via Docker, with full API compatibility."
+date: 2026-02-24T00:00:00Z
 image: "/images/fauxqs-logo.jpg"
 categories: ["TypeScript", "Testing"]
 author: "kibertoad"
@@ -14,7 +14,7 @@ draft: false
 
 If you are running integration tests against AWS services like SQS, SNS or S3, chances are you've been using [LocalStack](https://localstack.cloud/). It has been the go-to solution for local AWS emulation for years, and for good reason. However, LocalStack recently [announced](https://blog.localstack.cloud/the-road-ahead-for-localstack/) that starting March 2026 the free Community image will require account authentication, and the free tier will no longer include CI/CD credits. For many open-source projects and small teams that rely on LocalStack in their CI pipelines, this is a meaningful change.
 
-This was one of the motivations behind building [fauxqs](https://github.com/kibertoad/fauxqs) ("faux queues"), a free, MIT-licensed, pure-TypeScript emulator for SQS, SNS and S3. It runs as a single in-process server with no Docker, no Java, no binary dependencies. Point your AWS SDK clients at it and run your tests.
+This was one of the motivations behind building [fauxqs](https://github.com/kibertoad/fauxqs) ("faux queues"), a free, MIT-licensed, pure-TypeScript emulator for SQS, SNS and S3. It runs as a single in-process server with no Docker, no Java, no binary dependencies. All state is in-memory by default, with optional SQLite-based persistence for local development workflows where you want state to survive restarts. Point your AWS SDK clients at it and run your tests.
 
 ## What Does It Cover?
 
@@ -63,6 +63,9 @@ fauxqs emulates the core functionality of three AWS services on a single endpoin
 - **Queue inspection.** You can non-destructively peek at all messages in a queue (ready, in-flight, and delayed) without consuming them or affecting visibility timeouts. Available both as a programmatic API (`server.inspectQueue("my-queue")`) and via HTTP endpoints (`GET /_fauxqs/queues/my-queue`). Useful for debugging test failures when you need to see what's actually sitting in a queue.
 - **Fast state cleanup.** `server.reset()` clears all messages and S3 objects between tests while preserving resource definitions. No need to tear down and recreate queues, topics and buckets for each test — just reset and go.
 - **Init config.** You can pass a JSON file to pre-create queues, topics, subscriptions, and buckets on startup. This is useful for both local development and CI environments.
+- **Optional persistence.** By default, all state is in-memory. Pass the `dataDir` option, and fauxqs stores everything in SQLite — queues, messages (including inflight and delayed), topics, subscriptions, buckets, objects, and even FIFO sequence counters. Restart the server and pick up where you left off. See the dedicated section below.
+- **Multi-region support.** Region is part of an entity's identity, just like in real AWS. A queue named `my-queue` in `us-east-1` is a completely different entity from `my-queue` in `eu-west-1`. The region is automatically detected from the SDK client's `Authorization` header.
+- **Relaxed validation rules.** By default, fauxqs enforces AWS-strict validations. You can selectively relax some of them for convenience during development (e.g., disabling the minimum 5 MiB source size requirement for byte-range `UploadPartCopy`).
 - **Completely open and free, forever.** MIT-licensed with no plans to monetize any part of it, ever.
 
 ## Performance
@@ -316,11 +319,40 @@ const s3 = new S3Client({
 });
 ```
 
+## Persistence
+
+By default, all state is in-memory and lost when the server stops — which is exactly what you want for tests. But for local development, it's convenient to have queues, messages and S3 objects survive restarts. Pass the `dataDir` option, and fauxqs stores everything in a SQLite database:
+
+**CLI:**
+
+```bash
+FAUXQS_DATA_DIR=./data npx fauxqs
+```
+
+**Docker:**
+
+The Docker image has `FAUXQS_DATA_DIR=/data` preset. Mount a volume and set `FAUXQS_PERSISTENCE=true` to enable it:
+
+```bash
+docker run -p 4566:4566 -v fauxqs-data:/data -e FAUXQS_PERSISTENCE=true kibertoad/fauxqs
+```
+
+Without `FAUXQS_PERSISTENCE=true`, the server runs in-memory even if a volume is mounted.
+
+**Programmatic:**
+
+```typescript
+const server = await startFauxqs({ port: 4566, dataDir: "./data" });
+```
+
+All mutations are written through to SQLite immediately — no batching or delayed flush. On restart with the same `dataDir`, the server restores all state including SQS queues with their messages (ready, delayed, and inflight with visibility deadlines), FIFO sequence counters, SNS topics and subscriptions (fan-out works immediately after restart), and S3 buckets with objects and in-progress multipart uploads.
+
+`reset()` and `purgeAll()` also write through to the database, so they work consistently whether you're running in-memory or with persistence enabled.
+
 ## What It Does Not Do
 
 To be clear: fauxqs is a development and testing tool. It is not intended for running production systems, and you should not use it as a substitute for actual AWS services in any deployed environment.
 
-- All state lives in memory and is lost on restart.
 - Authentication is not enforced.
 - Non-SQS SNS delivery protocols (HTTP endpoints, Lambda, email) are not supported.
 - S3 features like versioning, lifecycle policies and encryption are not implemented.
