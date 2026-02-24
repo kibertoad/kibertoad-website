@@ -1,7 +1,7 @@
 ---
 title: "fauxqs: a Free, Pure-TypeScript SQS/SNS/S3 Emulator"
 meta_title: "fauxqs - Free TypeScript SQS SNS S3 Emulator"
-description: "Introducing fauxqs, a lightweight AWS emulator for SQS, SNS and S3 written in pure TypeScript. In-memory by default with optional SQLite persistence. Runs in-process or via Docker, with full API compatibility."
+description: "Introducing fauxqs, a lightweight AWS emulator for SQS, SNS and S3 written in pure TypeScript. In-memory by default with optional SQLite persistence. Runs in-process or via Docker."
 date: 2026-02-24T00:00:00Z
 image: "/images/fauxqs-logo.jpg"
 categories: ["Typescript", "Testing"]
