@@ -12,13 +12,13 @@ draft: false
 
 ## Introduction
 
-If you have ever worked on a React application that grew past a handful of features, you know the shape of the problem. Adding a new screen is rarely just "add a screen." You touch `App.tsx` to register a route, then the sidebar config to add a navigation entry, then the command palette registry, then maybe an auth guard, then a feature-flag map somewhere. Each of those files is shared by every other feature in the app. When four teams are all editing the same handful of files, you get constant merge conflicts, no clear ownership of anything, and a codebase where deleting a feature means hunting down fragments scattered across a dozen locations.
+Most React applications start simple and then accumulate features until adding one stops being simple. Adding a new screen is rarely just "add a screen." You register a route in `App.tsx`, add a navigation entry to the sidebar config, register a command in the command palette, maybe wire up an auth guard, and update a feature-flag map somewhere. Every one of those files is shared with every other feature. Once a few teams are editing the same files, you get merge conflicts on every branch, nobody clearly owns anything, and removing a feature turns into a scavenger hunt for the fragments it left behind.
 
 This was the motivation behind [modular-react](https://github.com/kibertoad/modular-react), a framework that sits on top of [React Router](https://reactrouter.com/) or [TanStack Router](https://tanstack.com/router) and lets you structure an application as a set of self-contained, independently-owned modules rather than one big shell that knows about everything. Each feature lives in a single `modules/<name>/` directory that declares everything it contributes — routes, navigation items, command palette entries, UI zone contributions, and its dependencies. You add a feature by creating a module and registering it once. You delete a feature by deleting a directory and removing one line. The shell never has to know about any specific module; it just registers them, and the runtime wires everything together.
 
 ## The Problem at Hand
 
-Router libraries solve routing. They do it well. But a real application is more than a route table. A feature typically needs to:
+Routers handle routing well. But a real application is more than a route table. A feature usually needs to:
 
 - Register one or more **routes**
 - Add itself to the **navigation** (sidebar, header, breadcrumbs)
@@ -27,19 +27,19 @@ Router libraries solve routing. They do it well. But a real application is more 
 - Respect **cross-cutting concerns** like auth and feature flags
 - Declare **dependencies** on shared services or other features
 
-In a router-only setup, none of that is co-located. The routing lives in one place, the navigation in another, the commands in a third. The feature itself is smeared across the codebase, and the central files become a contention point that every team has to coordinate around. This is manageable for a small app and a single team. It becomes a tax on every change once you have multiple teams contributing features into the same shell.
+In a router-only setup, none of that lives together. Routing is in one file, navigation in another, commands in a third, and the feature itself ends up scattered across the codebase. The shared files in the middle turn into a coordination bottleneck. One team and a small app can live with this. Several teams pushing features into the same shell cannot.
 
 ## Prior Alternatives
 
-The usual ways teams have tried to tame this each have real trade-offs:
+Teams have tried a few approaches to this, each with its own trade-offs:
 
-- **Convention and discipline.** Agree on where things go and hope everyone follows the rules. This works until it doesn't — the shared files still exist, and they are still edited by everyone.
-- **Micro-frontends.** Split the app into separately built and deployed applications stitched together at runtime (Module Federation, single-spa, iframes). This buys you true isolation and independent deploys, but at a steep cost: runtime integration complexity, version-skew headaches, duplicated dependencies, cross-app communication boilerplate, and a build pipeline that is meaningfully harder to reason about. It is a heavy solution for what is often an organizational problem rather than a deployment one.
+- **Convention and discipline.** Agree on where things go and hope everyone follows the rules. It holds up right until someone is in a hurry, and the shared files are still there for everyone to edit regardless.
+- **Micro-frontends.** Split the app into separately built and deployed applications stitched together at runtime (Module Federation, single-spa, iframes). This gives you real isolation and independent deploys, but it costs a lot: runtime integration complexity, version-skew headaches, duplicated dependencies, cross-app communication boilerplate, and a build pipeline that is much harder to debug. It is a heavy solution for what is usually an organizational problem rather than a deployment one.
 - **Plugin systems rolled in-house.** Many large apps end up growing their own registry of "features" with ad-hoc lifecycle hooks. These tend to be untyped, undocumented, and specific to one codebase, so the patterns never transfer and the edges are never quite finished.
 
-modular-react aims for the middle ground: the ownership and isolation benefits of a plugin architecture, in a single application and a single build, with full TypeScript types end to end and no runtime federation machinery.
+modular-react sits in between: the ownership and isolation of a plugin architecture, in a single application and a single build, with full TypeScript types end to end and no runtime federation machinery.
 
-## What modular-react Brings to the Table
+## The Core Model
 
 The core idea is small and declarative. A module is a plain object that describes what it contributes. Here is a billing module:
 
@@ -110,11 +110,11 @@ react-router-modules create journey customer-onboarding \
   --modules profile,plan,billing [--persistence]
 ```
 
-## Major Highlight: Journeys
+## Journeys: Multi-Module Workflows
 
-Modules are great for features that are independent. But some of the most painful flows in an application are the ones that span several features in sequence: a customer onboarding flow that goes profile confirmation → plan selection → payment, where each step lives in a different module and state has to be carried through. Wiring these by hand usually means one module importing another, shared mutable state, and brittle conditional navigation — exactly the cross-module coupling modular-react is trying to avoid.
+Modules work well for features that stand on their own. The harder flows are the ones that run through several features in sequence: a customer onboarding flow that goes profile confirmation → plan selection → payment, where each step lives in a different module and state has to be carried through. Wiring these by hand usually means one module importing another, shared mutable state, and brittle conditional navigation, which is exactly the cross-module coupling modular-react is trying to avoid.
 
-**Journeys** (`@modular-react/journeys`) are the answer to that. A journey is a typed, serializable workflow that composes several modules into a stepped flow, while the modules themselves stay journey-unaware. A module just declares what input each entry point accepts and what outcomes (exits) it can emit; the journey owns the transitions between them and the shared state.
+**Journeys** (`@modular-react/journeys`) handle exactly this case. A journey is a typed, serializable workflow that composes several modules into a stepped flow, while the modules themselves stay journey-unaware. A module just declares what input each entry point accepts and what outcomes (exits) it can emit; the journey owns the transitions between them and the shared state.
 
 The roles are cleanly separated:
 
@@ -191,7 +191,7 @@ needsMoreDetails: ({ output }) => ({
 }),
 ```
 
-Because the entire flow is described by typed entry/exit contracts and pure transitions, the boundaries between modules are checked end to end at compile time, and the journey's state is serializable. That last point matters more than it sounds: a serializable workflow means a mid-flow reload or a hand-off between sessions can survive. You register a persistence adapter and the runtime takes care of the rest:
+Because the entire flow is described by typed entry/exit contracts and pure transitions, the boundaries between modules are checked end to end at compile time, and the journey's state is serializable. Serializability is the part that pays off in practice: a user can reload mid-flow, or hand the flow off to another session, and pick up where they left off. You register a persistence adapter and the runtime handles the rest:
 
 ```ts
 registry.registerJourney(customerOnboardingJourney, {
@@ -227,9 +227,9 @@ const instanceId = manifest.journeys.start(customerOnboardingHandle, { customerI
 
 For flows where several modules need to be on screen at once rather than one-after-another (think an editor with a canvas, a source picker, and an inspector, each owned by a different team), there is a companion **Compositions** package, and the two interoperate: a composition zone can host a journey, and a journey step can render a composition.
 
-## Major Highlight: Catalog
+## Catalog: Build-Time Discovery
 
-The second highlight solves a different kind of scaling problem. Once you have dozens of modules contributed by many teams, the question that quietly sinks productivity is "is there already a module that does X?" If the answer is hard to find, people rebuild things that already exist.
+The Catalog tackles a different scaling problem. Once you have dozens of modules from many teams, "is there already a module that does X?" becomes a question nobody can answer quickly, and people end up rebuilding things that already exist.
 
 The **Catalog** (`@modular-react/catalog`) is a build-time discovery portal. It scans your monorepo, harvests every module and journey descriptor, and emits a static, deployable, searchable HTML/JS/CSS portal — no server-side runtime required. You can host it on S3 and CloudFront, GitHub Pages, or plain nginx.
 
@@ -255,7 +255,7 @@ pnpm exec modular-react-catalog build
 pnpm exec modular-react-catalog serve dist-catalog
 ```
 
-What you get out of it goes beyond a list of names. Modules can carry a typed `meta` block — owning team, domain, tags, lifecycle status, and links to docs, source, Slack, or runbooks:
+It produces more than a list of names. Modules can carry a typed `meta` block — owning team, domain, tags, lifecycle status, and links to docs, source, Slack, or runbooks:
 
 ```typescript
 export default defineModule({
@@ -276,13 +276,13 @@ export default defineModule({
 
 The portal turns that metadata into **faceted browsing** with pivot pages — `/teams/$team`, `/domains/$domain`, `/tags/$tag` — so you can see everything a team owns, or everything in the "finance" domain, in one click, with all filter state driven by the URL.
 
-The part I find most interesting is the **cross-reference graph**. The harvester doesn't just read descriptors; it statically parses journey source with `oxc-parser` and recovers transition destinations from the return statements of transition handlers. That lets the catalog pre-compute, at build time, indexes like:
+The most useful piece is the **cross-reference graph**. The harvester doesn't just read descriptors; it statically parses journey source with `oxc-parser` and recovers transition destinations from the return statements of transition handlers. That lets the catalog pre-compute, at build time, indexes like:
 
 - `journeysByModule` — which journeys route through each module
 - `journeysByInvokedJourney` — which journeys invoke each journey
 - `moduleEntryUsage` and `moduleExitUsage` — which journeys route into a given module entry, and where each exit leads
 
-In other words, before you ever delete or change a module, the catalog can already tell you which workflows depend on it. There is also an `enrich` hook for injecting org-specific metadata (for example, inferring `ownerTeam` from CODEOWNERS), and an extension API for adding custom detail-page tabs and filter facets.
+So before you delete or change a module, the catalog already shows you which workflows depend on it. There is also an `enrich` hook for injecting org-specific metadata (for example, inferring `ownerTeam` from CODEOWNERS), and an extension API for adding custom detail-page tabs and filter facets.
 
 ## Examples
 
