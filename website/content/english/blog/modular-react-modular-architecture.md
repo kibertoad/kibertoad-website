@@ -96,19 +96,7 @@ A few things make this more than just "objects in a folder":
 - **Typed dependencies.** Modules declare what stores and services they need; the registry provides them. The generics (`AppDependencies`, `AppSlots`) flow through, so a module's `dynamicSlots` callback sees a fully typed `deps`.
 - **Real deletion.** Because a module owns everything it contributes, removing it is removing a directory plus one `register` call. There is no central file to clean up.
 
-There is a CLI for scaffolding so you are not writing boilerplate by hand:
-
-```bash
-# Create a module with a route
-react-router-modules create module billing --route billing
-
-# Create a store
-react-router-modules create store notifications
-
-# Scaffold a typed multi-module workflow
-react-router-modules create journey customer-onboarding \
-  --modules profile,plan,billing [--persistence]
-```
+You rarely write this object by hand. A CLI scaffolds modules, stores, and journeys for you, which the CLI section below covers in full.
 
 ## Journeys: Multi-Module Workflows
 
@@ -283,6 +271,45 @@ The most useful piece is the **cross-reference graph**. The harvester doesn't ju
 - `moduleEntryUsage` and `moduleExitUsage` — which journeys route into a given module entry, and where each exit leads
 
 So before you delete or change a module, the catalog already shows you which workflows depend on it. There is also an `enrich` hook for injecting org-specific metadata (for example, inferring `ownerTeam` from CODEOWNERS), and an extension API for adding custom detail-page tabs and filter facets.
+
+## The CLI
+
+Most of the repetitive setup is handled by a CLI. There are two router-specific packages with the same set of commands: `@react-router-modules/cli` (binary `react-router-modules`) and `@tanstack-react-modules/cli` (binary `tanstack-react-modules`). Both are thin wrappers around `@modular-react/cli-core`, which holds the templates and the actual command implementations. You can run either through `npx` without installing it, or add it to the workspace `devDependencies` and call it with `pnpm exec`.
+
+`init` scaffolds a new pnpm workspace:
+
+```bash
+npx @react-router-modules/cli init my-app --scope @myorg --module dashboard
+```
+
+`--scope` sets the npm scope for the workspace packages, and `--module` seeds an initial feature module (leave it off and the CLI prompts interactively).
+
+`create module` generates a routable module under `modules/<name>/`:
+
+```bash
+npx @react-router-modules/cli create module billing --route billing --nav-group finance
+```
+
+`--route` sets the route path, and the optional `--nav-group` places the navigation entry into a group.
+
+`create store` scaffolds a headless Zustand store, adds it to the `AppDependencies` interface, and registers it on the registry:
+
+```bash
+npx @react-router-modules/cli create store notifications
+```
+
+`create journey` generates a typed multi-module workflow under `journeys/<name>/`:
+
+```bash
+npx @react-router-modules/cli create journey customer-onboarding \
+  --modules dashboard,billing --persistence
+```
+
+`--modules` is the comma-separated list of modules to compose into the journey's typed module map. `--persistence` also generates a localStorage adapter built on `createWebStoragePersistence`; from there you install `journeysPlugin()` on the registry and call `registerJourney(...)` in the shell.
+
+One thing to keep in mind: run `pnpm install` after any scaffolding command. The generated module is its own workspace package, and until you install, it isn't linked. Every command accepts `--help` for its full flag set, and the TanStack CLI mirrors all of the above with the `tanstack-react-modules` binary.
+
+The catalog has its own separate binary, `modular-react-catalog` (`build` and `serve`), shown in the Catalog section above.
 
 ## Examples
 
