@@ -31,13 +31,16 @@ In a router-only setup, none of that lives together. Routing is in one file, nav
 
 ## Prior Alternatives
 
-Teams have tried a few approaches to this, each with its own trade-offs:
+Teams have tried a few approaches to this, each trading off differently on how much isolation you get, whether features can deploy independently, and what it costs to run:
 
-- **Convention and discipline.** Agree on where things go and hope everyone follows the rules. It holds up right until someone is in a hurry, and the shared files are still there for everyone to edit regardless.
-- **Micro-frontends.** Split the app into separately built and deployed applications stitched together at runtime (Module Federation, single-spa, iframes). This gives you real isolation and independent deploys, but it costs a lot: runtime integration complexity, version-skew headaches, duplicated dependencies, cross-app communication boilerplate, and a build pipeline that is much harder to debug. It is a heavy solution for what is usually an organizational problem rather than a deployment one.
-- **Plugin systems rolled in-house.** Many large apps end up growing their own registry of "features" with ad-hoc lifecycle hooks. These tend to be untyped, undocumented, and specific to one codebase, so the patterns never transfer and the edges are never quite finished.
+| Approach | Isolation | Independent deploys | Main cost |
+| --- | --- | --- | --- |
+| **Convention and discipline** | None; the shared files stay shared | No | Holds up until someone is in a hurry, and nothing enforces the rules |
+| **Micro-frontends** (Module Federation, single-spa, iframes) | Strong | Yes | Runtime integration complexity, version skew, duplicated dependencies, cross-app communication boilerplate, harder-to-debug builds |
+| **In-house plugin systems** | Medium | No | Usually untyped, undocumented, and specific to one codebase, so the patterns never transfer |
+| **modular-react** | Module-level, in one build | No | Isolation is by convention (enforceable with lint rules); no independent deploys |
 
-modular-react sits in between: the ownership and isolation of a plugin architecture, in a single application and a single build, with full TypeScript types end to end and no runtime federation machinery.
+Micro-frontends in particular are a heavy solution for what is usually an organizational problem rather than a deployment one. modular-react sits in between the rows above: the ownership and isolation of a plugin architecture, in a single application and a single build, with full TypeScript types end to end and no runtime federation machinery.
 
 ## The Vocabulary
 
@@ -47,7 +50,7 @@ modular-react has a small set of concepts. Naming them up front makes the code i
 
 **Module.** A single feature, expressed as a plain object via `defineModule`. It declares everything the feature contributes: its routes, navigation items, slot contributions, zone contributions, dependencies, and optional lifecycle hooks. A module is the unit of ownership: one team owns one `modules/<name>/` directory.
 
-**Registry and manifest.** The registry (`createRegistry`) is where the shell registers modules and provides app-wide dependencies. Resolving it (`resolveManifest`) produces the manifest: the composed route tree, the wrapped React providers, and the aggregated contributions the shell renders. Features never import each other; everything meets at the registry.
+**Registry and manifest.** The registry (`createRegistry`) is where the shell registers modules and provides app-wide dependencies. Resolving it (`resolveManifest`) produces the manifest: the composed route tree, the wrapped React providers, and the aggregated contributions the shell renders. The intended pattern is that features don't import each other directly; they meet at the registry instead. The library doesn't physically block a cross-module import, but because each module is a self-contained directory, that boundary is easy to enforce with a linter (see [Enforcing module boundaries](#enforcing-module-boundaries) below).
 
 **Slots.** Static contributions aggregated across every module, answering "what does the whole app offer": the set of command-palette actions, the list of external systems. Modules declare `slots`; contributions that depend on runtime state (a role, a feature flag) use `dynamicSlots` and are refreshed with `recalculateSlots`.
 
@@ -119,6 +122,16 @@ A few things make this more than just "objects in a folder":
 - **Real deletion.** Because a module owns everything it contributes, removing it is removing a directory plus one `register` call. There is no central file to clean up.
 
 You rarely write this object by hand. A CLI scaffolds modules, stores, and journeys for you, which the CLI section below covers in full.
+
+### Enforcing module boundaries
+
+modular-react keeps features apart by convention: the registry is the meeting point, and one module is not meant to import another's internals directly. The library doesn't stop you from writing such an import, but because every module is a self-contained `modules/<name>/` directory, the boundary maps onto a directory and is straightforward to enforce with a linter.
+
+- **ESLint** has the most mature options: [`no-restricted-imports`](https://eslint.org/docs/latest/rules/no-restricted-imports), `eslint-plugin-import`'s `no-restricted-paths` for directory-to-directory dependency rules, or `eslint-plugin-boundaries` for architectures defined by element type.
+- **Biome** supports it through [`noRestrictedImports`](https://biomejs.dev/linter/rules/no-restricted-imports/), which since v2.2.0 takes gitignore-style path patterns, plus `noPrivateImports` for package-private visibility.
+- **Oxlint** supports it through [`no-restricted-imports`](https://oxc.rs/docs/guide/usage/linter/rules/eslint/no-restricted-imports) with path patterns. (A dedicated `no-restricted-paths` is still on its roadmap.)
+
+Point any of these at your `modules/` directory to fail the build when one module reaches into another instead of going through the registry.
 
 ## Journeys: Multi-Module Workflows
 
@@ -359,7 +372,7 @@ npx @tanstack-react-modules/cli init my-app --scope @myorg --module dashboard
 cd my-app && pnpm install && pnpm dev
 ```
 
-The framework targets React 19, Node 22+, and pnpm workspaces (Yarn Berry and Bun work with minor edits after scaffolding). The router integration packages (`@react-router-modules` v2.x and `@tanstack-react-modules` v1.x) are stable, as are `@modular-react/core`, `react`, and the catalog and testing packages; the `compositions` package is earlier (v0.1.x) and may still have breaking changes.
+The framework targets React 19, Node 22+, and pnpm workspaces (Yarn Berry and Bun work with minor edits after scaffolding). The router integration packages (`@react-router-modules` v2.x and `@tanstack-react-modules` v2.x) are stable, as are `@modular-react/core`, `react`, and the catalog and testing packages; the `compositions` package is earlier (v0.1.x) and may still have breaking changes.
 
 modular-react is most worthwhile when an application has outgrown a single hand-maintained shell: plugin-style apps, teams contributing independent features in parallel, and large codebases where `App.tsx` and the sidebar config have become merge-conflict magnets. For a small single-team app, a plain router is still the right call.
 
