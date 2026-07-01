@@ -39,9 +39,31 @@ Teams have tried a few approaches to this, each with its own trade-offs:
 
 modular-react sits in between: the ownership and isolation of a plugin architecture, in a single application and a single build, with full TypeScript types end to end and no runtime federation machinery.
 
+## The Vocabulary
+
+modular-react has a small set of concepts. Naming them up front makes the code in the rest of this post easy to read.
+
+**Shell.** The host application. It owns the top-level layout (where the sidebar, header, main content, and any panels live) and the router. The shell knows nothing about individual features; it registers modules and renders what they contribute.
+
+**Module.** A single feature, expressed as a plain object via `defineModule`. It declares everything the feature contributes: its routes, navigation items, slot contributions, zone contributions, dependencies, and optional lifecycle hooks. A module is the unit of ownership: one team owns one `modules/<name>/` directory.
+
+**Registry and manifest.** The registry (`createRegistry`) is where the shell registers modules and provides app-wide dependencies. Resolving it (`resolveManifest`) produces the manifest: the composed route tree, the wrapped React providers, and the aggregated contributions the shell renders. Features never import each other; everything meets at the registry.
+
+**Slots.** Static contributions aggregated across every module, answering "what does the whole app offer": the set of command-palette actions, the list of external systems. Modules declare `slots`; contributions that depend on runtime state (a role, a feature flag) use `dynamicSlots` and are refreshed with `recalculateSlots`.
+
+**Navigation.** The typed navigation items each module contributes. The shell aggregates them into the sidebar, header, or breadcrumbs.
+
+**Zones.** Named layout regions (a detail panel, a toolbar, a status bar) that the active route fills. Unlike slots, which are static and collected from all modules, zone contributions change on every navigation and come from whichever route is currently active.
+
+**Dependencies.** What a module needs from the app: shared stores (Zustand state that changes at runtime), reactive services (external sources you subscribe to, like a websocket), and plain services (static utilities like an HTTP client). Modules list them with `requires` (throws if missing) or `optionalRequires` (warns if missing), and the registry provides them, fully typed.
+
+**The two router integrations.** modular-react ships two integrations on a shared, router-agnostic foundation (`@modular-react/*`): `@react-router-modules/*` for React Router and `@tanstack-react-modules/*` for TanStack Router. They are peers; pick the one matching the router you already use. The concepts above are identical across both, and router-neutral code (shared stores, contracts, typed hooks) is written once.
+
+Three optional layers build on this core, each covered in its own section below. **Journeys** compose several modules into a typed, serializable workflow that runs in sequence (profile, then plan, then payment), with each step a different module. **Compositions** arrange several modules onto one screen at once (an editor with a canvas, a source picker, and an inspector) rather than in sequence. **Catalog** is a build-time tool that scans a workspace for every module and journey and emits a static, searchable discovery portal.
+
 ## The Core Model
 
-The core idea is small and declarative. A module is a plain object that describes what it contributes. Here is a billing module:
+With the vocabulary in place, the code reads directly. A module is a plain object that describes what it contributes. Here is a billing module:
 
 ```typescript
 import { defineModule } from "@react-router-modules/core";
@@ -313,13 +335,15 @@ The catalog has its own separate binary, `modular-react-catalog` (`build` and `s
 
 ## Examples
 
-The repository ships several runnable example apps, in both React Router and TanStack Router variants, each demonstrating a different pattern:
+The snippets above are isolated on purpose. To see the concepts working together as entire apps, the repository ships several runnable example workspaces under [`examples/`](https://github.com/kibertoad/modular-react/tree/main/examples), most in both React Router and TanStack Router variants:
 
-- **integration-manager** — three sibling modules (Contentful, Strapi, GitHub) that all render the same generic screen with different columns, buttons, and feature flags. A good illustration of shared screens with per-module configuration.
-- **customer-onboarding-journey** — the multi-step enrollment flow used throughout this post, showing entry/exit contracts, branching, shared state, and persistence.
-- **editor-composition** — an editing interface where canvas, source picker, and inspector panels are each owned by different modules and coordinated through the Compositions package.
-- **remote-capabilities** — navigation and slots driven by backend-served JSON rather than hardcoded module source.
-- **active-project-manifest** — the manifest switches dynamically when the user changes projects, with each project supplying its own configuration.
+- **integration-manager** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/integration-manager), [TanStack Router](https://github.com/kibertoad/modular-react/tree/main/examples/tanstack-router/integration-manager)) — three sibling modules (Contentful, Strapi, GitHub) that all render the same generic screen with different columns, buttons, and feature flags. A good illustration of shared screens with per-module configuration.
+- **customer-onboarding-journey** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/customer-onboarding-journey), [TanStack Router](https://github.com/kibertoad/modular-react/tree/main/examples/tanstack-router/customer-onboarding-journey)) — the multi-step enrollment flow used throughout this post, showing entry/exit contracts, branching, shared state, and persistence.
+- **editor-composition** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/editor-composition), [TanStack Router](https://github.com/kibertoad/modular-react/tree/main/examples/tanstack-router/editor-composition)) — an editing interface where canvas, source picker, and inspector panels are each owned by different modules and coordinated through the Compositions package.
+- **remote-capabilities** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/remote-capabilities)) — navigation and slots driven by backend-served JSON rather than hardcoded module source.
+- **active-project-manifest** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/active-project-manifest)) — the manifest switches dynamically when the user changes projects, with each project supplying its own configuration.
+
+See [`examples/README.md`](https://github.com/kibertoad/modular-react/blob/main/examples/README.md) for how to run each one.
 
 ## Getting Started
 
