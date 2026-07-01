@@ -42,6 +42,8 @@ Teams have tried a few approaches to this, each trading off differently on how m
 
 Micro-frontends in particular are a heavy solution for what is usually an organizational problem rather than a deployment one. modular-react sits in between the rows above: the ownership and isolation of a plugin architecture, in a single application and a single build, with full TypeScript types end to end and no runtime federation machinery.
 
+One build does not mean one eager bundle. Route components code-split with a `lazy: () => import(...)` in the module descriptor, so a module's UI only ships when a user first reaches it, and in the library-owned router mode entire modules can be registered lazily with `registerLazy` (a `LazyModuleDescriptor`). Initial load stays proportional to what the user actually opens, not to the total number of modules.
+
 ## The Vocabulary
 
 modular-react has a small set of concepts. Naming them up front makes the code in the rest of this post easy to read.
@@ -353,7 +355,7 @@ The snippets above are isolated on purpose. To see the concepts working together
 - **integration-manager** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/integration-manager), [TanStack Router](https://github.com/kibertoad/modular-react/tree/main/examples/tanstack-router/integration-manager)) — three sibling modules (Contentful, Strapi, GitHub) that all render the same generic screen with different columns, buttons, and feature flags. A good illustration of shared screens with per-module configuration.
 - **customer-onboarding-journey** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/customer-onboarding-journey), [TanStack Router](https://github.com/kibertoad/modular-react/tree/main/examples/tanstack-router/customer-onboarding-journey)) — the multi-step enrollment flow used throughout this post, showing entry/exit contracts, branching, shared state, and persistence.
 - **editor-composition** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/editor-composition), [TanStack Router](https://github.com/kibertoad/modular-react/tree/main/examples/tanstack-router/editor-composition)) — an editing interface where canvas, source picker, and inspector panels are each owned by different modules and coordinated through the Compositions package.
-- **remote-capabilities** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/remote-capabilities)) — navigation and slots driven by backend-served JSON rather than hardcoded module source.
+- **remote-capabilities** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/remote-capabilities), [TanStack Router](https://github.com/kibertoad/modular-react/tree/main/examples/tanstack-router/remote-capabilities)) — navigation and slots driven by backend-served JSON rather than hardcoded module source.
 - **active-project-manifest** ([React Router](https://github.com/kibertoad/modular-react/tree/main/examples/react-router/active-project-manifest)) — the manifest switches dynamically when the user changes projects, with each project supplying its own configuration.
 
 See [`examples/README.md`](https://github.com/kibertoad/modular-react/blob/main/examples/README.md) for how to run each one.
@@ -372,7 +374,9 @@ npx @tanstack-react-modules/cli init my-app --scope @myorg --module dashboard
 cd my-app && pnpm install && pnpm dev
 ```
 
-The framework targets React 19, Node 22+, and pnpm workspaces (Yarn Berry and Bun work with minor edits after scaffolding). The router integration packages (`@react-router-modules` v2.x and `@tanstack-react-modules` v2.x) are stable, as are `@modular-react/core`, `react`, and the catalog and testing packages; the `compositions` package is earlier (v0.1.x) and may still have breaking changes.
+Adoption doesn't have to start from `init`. In an existing router-only app you can add a registry, mount the manifest's `Providers` at the root, and convert features into modules one at a time: the shell only registers whatever modules exist, so there's no rewrite, and a single feature can move behind a module boundary while the rest of the app stays as it is.
+
+The framework targets React 19, Node 22+, and pnpm workspaces. npm is not supported, because the scaffold relies on the `workspace:*` protocol that npm doesn't implement; running `npm install` in the generated workspace fails. Yarn Berry and Bun both understand `workspace:*` and work with minor script edits after scaffolding. The router integration packages (`@react-router-modules` v2.x and `@tanstack-react-modules` v2.x) are stable, as are `@modular-react/core`, `react`, and the catalog and testing packages; the `compositions` package is earlier (v0.1.x) and may still have breaking changes.
 
 modular-react is most worthwhile when an application has outgrown a single hand-maintained shell: plugin-style apps, teams contributing independent features in parallel, and large codebases where `App.tsx` and the sidebar config have become merge-conflict magnets. For a small single-team app, a plain router is still the right call.
 
