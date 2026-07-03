@@ -21,6 +21,7 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       HUGO_CACHEDIR: /tmp/hugo_cache
     steps:
@@ -40,7 +41,7 @@ jobs:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: 'latest'
+          hugo-version: '0.163.3'
           extended: true
 
       - name: Setup Node
@@ -61,7 +62,7 @@ jobs:
             ${{ runner.os }}-hugo-
 
       - name: Get Hugo modules
-        run: hugo mod get -u
+        run: hugo mod get
 
       - name: Setup module npm dependencies
         run: hugo mod npm pack
