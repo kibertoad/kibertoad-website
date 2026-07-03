@@ -1,0 +1,9 @@
+# zizmor configuration - https://docs.zizmor.sh/configuration/
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        # GitHub-maintained actions are trusted at a version tag.
+        actions/*: ref-pin
+        # Everything else (third-party actions) must be pinned to a full commit SHA.
+        "*": hash-pin
